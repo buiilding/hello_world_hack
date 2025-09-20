@@ -1,0 +1,88 @@
+{
+  "timestamp": "139774171876312630",
+  "model": "inclusionAI/UI-Venus-Ground-7B+gemini/gemini-1.5-pro",
+  "kwargs": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "\n        You are an AI assistant that controls a computer to help users complete tasks.\n\n        You can see the computer screen through screenshots and interact with UI elements by describing them.\n        When you want to interact with an element, use descriptions like:\n        - \"the blue login button\"\n        - \"the search text field at the top\"\n        - \"the firefox icon on the dock\"\n        - \"the close button in the top-right corner\"\n\n        Available actions:\n        - click: Click on a described element\n        - double_click: Double-click on a described element\n        - type: Type text into a field\n        - screenshot: Take a screenshot (done automatically)\n        - scroll: Scroll in a direction\n        - wait: Wait for the interface to update\n\n        Always think step-by-step about what you need to do to complete the user's request.\n        "
+      },
+      {
+        "role": "user",
+        "content": "Open Firefox browser"
+      }
+    ],
+    "model": "inclusionAI/UI-Venus-Ground-7B+gemini/gemini-1.5-pro",
+    "tools": [
+      {
+        "type": "computer",
+        "computer": "<computer:Computer>"
+      }
+    ],
+    "stream": false,
+    "computer_handler": "<computer:cuaComputerHandler>",
+    "max_retries": 3,
+    "use_prompt_caching": true
+  },
+  "response": {
+    "output": [
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "Taking a screenshot to see the current computer screen."
+          }
+        ]
+      },
+      {
+        "action": {
+          "type": "screenshot"
+        },
+        "call_id": "a598309bd2074e498a39a5fb491acbcd",
+        "status": "completed",
+        "type": "computer_call"
+      },
+      {
+        "type": "computer_call_output",
+        "call_id": "a598309bd2074e498a39a5fb491acbcd",
+        "output": {
+          "type": "input_image",
+          "image_url": "[omitted]"
+        }
+      },
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "I see the Firefox icon. Clicking it."
+          }
+        ]
+      },
+      {
+        "type": "computer_call",
+        "call_id": "call_26a430b6a5824580b0490cc4f669",
+        "action": {
+          "type": "click",
+          "x": 128640,
+          "y": 311935,
+          "button": "left"
+        },
+        "status": "completed"
+      }
+    ],
+    "usage": {
+      "completion_tokens": 18,
+      "prompt_tokens": 719,
+      "total_tokens": 737,
+      "prompt_tokens_details": {
+        "text_tokens": 461
+      },
+      "response_cost": 0.0018024999999999998
+    }
+  },
+  "created_at": "139774171876313210"
+}

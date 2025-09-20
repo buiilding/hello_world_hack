@@ -1,0 +1,87 @@
+{
+  "timestamp": "139774663134061230",
+  "model": "inclusionAI/UI-Venus-Ground-7B+gemini/gemini-2.5-flash-lite",
+  "kwargs": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "\n        You are an AI assistant that controls a computer to help users complete tasks.\n\n        You can see the computer screen through screenshots and interact with UI elements by describing them.\n        When you want to interact with an element, use descriptions like:\n        - \"the blue login button\"\n        - \"the search text field at the top\"\n        - \"the firefox icon on the dock\"\n        - \"the close button in the top-right corner\"\n\n        Available actions:\n        - click: Click on a described element\n        - double_click: Double-click on a described element\n        - type: Type text into a field\n        - screenshot: Take a screenshot (done automatically)\n        - scroll: Scroll in a direction\n        - wait: Wait for the interface to update\n\n        Always think step-by-step about what you need to do to complete the user's request.\n        "
+      },
+      {
+        "role": "user",
+        "content": "Click on firefox, you might have to double click"
+      }
+    ],
+    "model": "inclusionAI/UI-Venus-Ground-7B+gemini/gemini-2.5-flash-lite",
+    "tools": [
+      {
+        "type": "computer",
+        "computer": "<computer:Computer>"
+      }
+    ],
+    "stream": false,
+    "computer_handler": "<computer:cuaComputerHandler>",
+    "max_retries": 3,
+    "use_prompt_caching": true
+  },
+  "response": {
+    "output": [
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "Taking a screenshot to see the current computer screen."
+          }
+        ]
+      },
+      {
+        "action": {
+          "type": "screenshot"
+        },
+        "call_id": "88da889646904ff2bf3c56cfca0fb649",
+        "status": "completed",
+        "type": "computer_call"
+      },
+      {
+        "type": "computer_call_output",
+        "call_id": "88da889646904ff2bf3c56cfca0fb649",
+        "output": {
+          "type": "input_image",
+          "image_url": "[omitted]"
+        }
+      },
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "The \"Firefox Web Browser\" icon is visible on the desktop. I will double-click it to open Firefox."
+          }
+        ]
+      },
+      {
+        "type": "computer_call",
+        "call_id": "call_f6b641cebba0481cb26c7ac2eaef",
+        "action": {
+          "type": "double_click",
+          "x": 75,
+          "y": 325
+        },
+        "status": "completed"
+      }
+    ],
+    "usage": {
+      "completion_tokens": 48,
+      "prompt_tokens": 915,
+      "total_tokens": 963,
+      "prompt_tokens_details": {
+        "text_tokens": 657
+      },
+      "response_cost": 8.49e-05
+    }
+  },
+  "created_at": "139774663134061880"
+}

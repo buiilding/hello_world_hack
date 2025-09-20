@@ -1,0 +1,16 @@
+{
+  "trajectory_id": "2025-09-18_incl_gemini-2.5-flash_013124_4098",
+  "created_at": "139774662844107320",
+  "status": "running",
+  "kwargs": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Click on firefox, you might have to double click"
+      }
+    ],
+    "stream": true,
+    "model": "inclusionAI/UI-Venus-Ground-7B+gemini/gemini-2.5-flash-lite",
+    "agent_loop": "ComposedGroundedConfig"
+  }
+}

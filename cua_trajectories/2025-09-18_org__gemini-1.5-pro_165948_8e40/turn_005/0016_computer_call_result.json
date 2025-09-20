@@ -1,0 +1,22 @@
+{
+  "item": {
+    "type": "computer_call",
+    "call_id": "call_df6364c18ae24327b75ea94a0932",
+    "action": {
+      "type": "wait"
+    },
+    "status": "completed"
+  },
+  "result": [
+    {
+      "type": "computer_call_output",
+      "call_id": "call_df6364c18ae24327b75ea94a0932",
+      "acknowledged_safety_checks": [],
+      "output": {
+        "type": "input_image",
+        "image_url": "[omitted]"
+      }
+    }
+  ],
+  "created_at": "139775220652732420"
+}

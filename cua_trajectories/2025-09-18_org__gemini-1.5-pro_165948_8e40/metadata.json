@@ -1,0 +1,17 @@
+{
+  "trajectory_id": "2025-09-18_org__gemini-1.5-pro_165948_8e40",
+  "created_at": "139775219880163880",
+  "status": "running",
+  "kwargs": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Plan and complete: Open Firefox. Navigate to https://www.amazon.com/. Search for shoes. Sort by price ascending. Return the cheapest item title and price."
+      }
+    ],
+    "stream": true,
+    "model": "org_orchestrator_gemini+gemini/gemini-1.5-pro",
+    "agent_loop": "OrchestratorGeminiConfig",
+    "grounding_model": "inclusionAI/UI-Venus-Ground-7B"
+  }
+}

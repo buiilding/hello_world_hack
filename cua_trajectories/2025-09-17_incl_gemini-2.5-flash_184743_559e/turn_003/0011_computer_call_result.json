@@ -1,0 +1,22 @@
+{
+  "item": {
+    "type": "computer_call",
+    "call_id": "call_c5051a59c3cd4f10aeab22d82182",
+    "action": {
+      "type": "screenshot"
+    },
+    "status": "completed"
+  },
+  "result": [
+    {
+      "type": "computer_call_output",
+      "call_id": "call_c5051a59c3cd4f10aeab22d82182",
+      "acknowledged_safety_checks": [],
+      "output": {
+        "type": "input_image",
+        "image_url": "[omitted]"
+      }
+    }
+  ],
+  "created_at": "139774421063414800"
+}

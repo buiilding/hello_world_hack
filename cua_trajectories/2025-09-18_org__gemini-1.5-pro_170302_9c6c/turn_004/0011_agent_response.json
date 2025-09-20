@@ -1,0 +1,139 @@
+{
+  "timestamp": "139775221998924300",
+  "model": "org_orchestrator_gemini+gemini/gemini-1.5-pro",
+  "kwargs": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "\n        You are the Orchestrator. Plan subtasks and route to either GUI or Programmer.\n        - Use GUI for visual navigation and element interactions.\n        - Use Programmer for anything expressible as commands or scripts (file ops, parsing, web via CLI/curl).\n        - Always return subtasks using this schema:\n          id: string, type: gui|programmer, inputs: object, success_criteria: string, retries: int\n        - Max retries per subtask: 5. If GUI coordinate wrong, propose a new element description.\n        - After each subtask, consider the latest screenshot and outputs.\n        - Stop when screenshot-based goal condition is met.\n        GUI model hint: inclusionAI/UI-Venus-Ground-7B+gemini/gemini-1.5-pro\n        Programmer LLM: gemini/gemini-2.0\n        "
+      },
+      {
+        "role": "user",
+        "content": "open up firefox browser using the command line"
+      },
+      {
+        "type": "computer_call",
+        "call_id": "call_6f6236723fb74cb59c454b86b698",
+        "action": {
+          "keys": [
+            "super"
+          ],
+          "type": "keypress"
+        },
+        "status": "completed",
+        "role": "assistant"
+      },
+      {
+        "type": "computer_call",
+        "call_id": "call_1f1bc7b82c394b549f8fed32b5e9",
+        "action": {
+          "text": "firefox",
+          "type": "type"
+        },
+        "status": "completed",
+        "role": "assistant"
+      },
+      {
+        "type": "computer_call",
+        "call_id": "call_887fb4f5bbf94772a1a76ba69c6f",
+        "action": {
+          "keys": [
+            "enter"
+          ],
+          "type": "keypress"
+        },
+        "status": "completed",
+        "role": "assistant"
+      },
+      {
+        "type": "computer_call_output",
+        "call_id": "call_6f6236723fb74cb59c454b86b698",
+        "acknowledged_safety_checks": [],
+        "output": {
+          "type": "input_image",
+          "image_url": "[omitted]"
+        },
+        "role": "assistant"
+      },
+      {
+        "type": "computer_call_output",
+        "call_id": "call_1f1bc7b82c394b549f8fed32b5e9",
+        "acknowledged_safety_checks": [],
+        "output": {
+          "type": "input_image",
+          "image_url": "[omitted]"
+        },
+        "role": "assistant"
+      },
+      {
+        "type": "computer_call_output",
+        "call_id": "call_887fb4f5bbf94772a1a76ba69c6f",
+        "acknowledged_safety_checks": [],
+        "output": {
+          "type": "input_image",
+          "image_url": "[omitted]"
+        },
+        "role": "assistant"
+      }
+    ],
+    "model": "org_orchestrator_gemini+gemini/gemini-1.5-pro",
+    "tools": [
+      {
+        "type": "computer",
+        "computer": "<computer:Computer>"
+      }
+    ],
+    "stream": false,
+    "computer_handler": "<computer:cuaComputerHandler>",
+    "max_retries": 3,
+    "use_prompt_caching": true,
+    "quantization_bits": 8,
+    "trust_remote_code": true,
+    "grounding_model": "inclusionAI/UI-Venus-Ground-7B"
+  },
+  "response": {
+    "output": [
+      {
+        "type": "computer_call",
+        "call_id": "call_06074d6e8bfa4f9c8f2660cec995",
+        "action": {
+          "keys": [
+            "super"
+          ],
+          "type": "keypress"
+        },
+        "status": "completed"
+      },
+      {
+        "type": "computer_call",
+        "call_id": "call_ce45eb2a34a04b15868df5d625f4",
+        "action": {
+          "text": "firefox",
+          "type": "type"
+        },
+        "status": "completed"
+      },
+      {
+        "type": "computer_call",
+        "call_id": "call_c458b6b0f68b4464befdbf9a39ba",
+        "action": {
+          "keys": [
+            "enter"
+          ],
+          "type": "keypress"
+        },
+        "status": "completed"
+      }
+    ],
+    "usage": {
+      "completion_tokens": 15,
+      "prompt_tokens": 435,
+      "total_tokens": 450,
+      "prompt_tokens_details": {
+        "text_tokens": 435
+      },
+      "response_cost": 0.00168
+    }
+  },
+  "created_at": "139775221998925180"
+}

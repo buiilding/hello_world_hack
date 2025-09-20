@@ -1,0 +1,23 @@
+{
+  "item": {
+    "type": "computer_call",
+    "call_id": "call_77ffe83c009a4e2c924b9272ad18",
+    "action": {
+      "text": "laptops",
+      "type": "type"
+    },
+    "status": "completed"
+  },
+  "result": [
+    {
+      "type": "computer_call_output",
+      "call_id": "call_77ffe83c009a4e2c924b9272ad18",
+      "acknowledged_safety_checks": [],
+      "output": {
+        "type": "input_image",
+        "image_url": "[omitted]"
+      }
+    }
+  ],
+  "created_at": "139774664882368000"
+}

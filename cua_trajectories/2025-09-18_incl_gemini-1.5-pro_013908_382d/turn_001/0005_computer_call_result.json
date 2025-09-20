@@ -1,0 +1,23 @@
+{
+  "item": {
+    "type": "computer_call",
+    "call_id": "call_a25d216fbbfe45a6bde49a8380f7",
+    "action": {
+      "text": "laptop",
+      "type": "type"
+    },
+    "status": "completed"
+  },
+  "result": [
+    {
+      "type": "computer_call_output",
+      "call_id": "call_a25d216fbbfe45a6bde49a8380f7",
+      "acknowledged_safety_checks": [],
+      "output": {
+        "type": "input_image",
+        "image_url": "[omitted]"
+      }
+    }
+  ],
+  "created_at": "139774667986183370"
+}

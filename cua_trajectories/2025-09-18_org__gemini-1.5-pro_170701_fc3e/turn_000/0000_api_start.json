@@ -1,0 +1,23 @@
+{
+  "kwargs": {
+    "model": "gemini/gemini-1.5-pro",
+    "messages": [
+      {
+        "role": "user",
+        "content": "\n        You are the Orchestrator. Plan subtasks and route to either GUI or Programmer.\n        - Use GUI for visual navigation and element interactions.\n        - Use Programmer for anything expressible as commands or scripts (file ops, parsing, web via CLI/curl).\n        - Always return subtasks using this schema:\n          id: string, type: gui|programmer, inputs: object, success_criteria: string, retries: int\n        - Max retries per subtask: 5. If GUI coordinate wrong, propose a new element description.\n        - After each subtask, consider the latest screenshot and outputs.\n        - Stop when screenshot-based goal condition is met.\n        GUI model hint: inclusionAI/UI-Venus-Ground-7B+gemini/gemini-1.5-pro\n        Programmer LLM: gemini/gemini-2.0\n        "
+      },
+      {
+        "role": "user",
+        "content": "open up firefox browser using the command line"
+      }
+    ],
+    "tools": [],
+    "max_retries": 3,
+    "stream": false,
+    "quantization_bits": 8,
+    "trust_remote_code": true,
+    "grounding_model": "inclusionAI/UI-Venus-Ground-7B",
+    "use_prompt_caching": true
+  },
+  "created_at": "139775224212361330"
+}

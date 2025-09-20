@@ -1,0 +1,22 @@
+{
+  "item": {
+    "type": "computer_call",
+    "call_id": "call_5e8cdcb00b3c47749f6ef39b9d21",
+    "action": {
+      "type": "wait"
+    },
+    "status": "completed"
+  },
+  "result": [
+    {
+      "type": "computer_call_output",
+      "call_id": "call_5e8cdcb00b3c47749f6ef39b9d21",
+      "acknowledged_safety_checks": [],
+      "output": {
+        "type": "input_image",
+        "image_url": "[omitted]"
+      }
+    }
+  ],
+  "created_at": "139774394429814890"
+}

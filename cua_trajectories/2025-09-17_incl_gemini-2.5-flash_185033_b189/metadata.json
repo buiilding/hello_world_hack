@@ -1,0 +1,16 @@
+{
+  "trajectory_id": "2025-09-17_incl_gemini-2.5-flash_185033_b189",
+  "created_at": "139774422331739350",
+  "status": "running",
+  "kwargs": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Go to amazon.com and search for 'computer use agents'"
+      }
+    ],
+    "stream": true,
+    "model": "inclusionAI/UI-Venus-Ground-7B+gemini/gemini-2.5-flash-lite",
+    "agent_loop": "ComposedGroundedConfig"
+  }
+}

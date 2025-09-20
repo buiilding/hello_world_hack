@@ -1,0 +1,16 @@
+{
+  "trajectory_id": "2025-09-17_incl_gemini-1.5-pro_114659_bce0",
+  "created_at": "139774168196787020",
+  "status": "running",
+  "kwargs": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Open Firefox browser"
+      }
+    ],
+    "stream": true,
+    "model": "inclusionAI/UI-Venus-Ground-7B+gemini/gemini-1.5-pro",
+    "agent_loop": "ComposedGroundedConfig"
+  }
+}

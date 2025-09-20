@@ -1,0 +1,53 @@
+{
+  "kwargs": {
+    "model": "gemini/gemini-1.5-pro",
+    "messages": [
+      {
+        "role": "user",
+        "content": "\n        You are the Orchestrator. Plan subtasks and route to either GUI or Programmer.\n        - Use GUI for visual navigation and element interactions.\n        - Use Programmer for anything expressible as commands or scripts (file ops, parsing, web via CLI/curl).\n        - Always return subtasks as a single JSON code block using this schema:\n          id: string, type: gui|programmer, inputs: object, success_criteria: string, retries: int\n          Example output:\n          \n```json\n[\n  {\"id\":\"step1\",\"type\":\"programmer\",\"inputs\":{\"command\":\"firefox\"},\"success_criteria\":\"Firefox process is running.\",\"retries\":5},\n  {\"id\":\"step2\",\"type\":\"gui\",\"inputs\":{\"action\":\"screenshot\"},\"success_criteria\":\"Firefox window visible.\",\"retries\":5}\n]\n```\n\n        - Max retries per subtask: 5. If GUI coordinate wrong, propose a new element description.\n        - After each subtask, consider the latest screenshot and outputs.\n        - Stop when screenshot-based goal condition is met.\n        GUI model hint: inclusionAI/UI-Venus-Ground-7B+gemini/gemini-1.5-pro\n        Programmer LLM: gemini/gemini-2.0\n        "
+      },
+      {
+        "role": "user",
+        "content": "open up firefox browser using the command line"
+      }
+    ],
+    "tools": [],
+    "max_retries": 3,
+    "stream": false,
+    "quantization_bits": 8,
+    "trust_remote_code": true,
+    "grounding_model": "inclusionAI/UI-Venus-Ground-7B",
+    "use_prompt_caching": true
+  },
+  "result": {
+    "id": "Y3XMaNbwMuGN_PUP_4Tk6AY",
+    "created": 1758229859,
+    "model": "gemini-1.5-pro",
+    "object": "chat.completion",
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "content": "```json\n[\n  {\"id\": \"step1\", \"type\": \"programmer\", \"inputs\": {\"command\": \"firefox\"}, \"success_criteria\": \"Firefox process is running.\", \"retries\": 5},\n  {\"id\": \"step2\", \"type\": \"gui\", \"inputs\": {\"action\": \"screenshot\", \"window_title\": \"Firefox\"}, \"success_criteria\": \"Screenshot contains a Firefox window.\", \"retries\": 5}\n]\n```\n",
+          "role": "assistant",
+          "images": [],
+          "thinking_blocks": []
+        }
+      }
+    ],
+    "usage": {
+      "completion_tokens": 100,
+      "prompt_tokens": 281,
+      "total_tokens": 381,
+      "prompt_tokens_details": {
+        "text_tokens": 281
+      }
+    },
+    "vertex_ai_grounding_metadata": [],
+    "vertex_ai_url_context_metadata": [],
+    "vertex_ai_safety_results": [],
+    "vertex_ai_citation_metadata": []
+  },
+  "created_at": "139775226615737830"
+}

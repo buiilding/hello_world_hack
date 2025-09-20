@@ -1,0 +1,25 @@
+{
+  "item": {
+    "type": "computer_call",
+    "call_id": "call_c2d9df1acfcd422f878adda9026d",
+    "action": {
+      "type": "click",
+      "x": 434,
+      "y": 170,
+      "button": "left"
+    },
+    "status": "completed"
+  },
+  "result": [
+    {
+      "type": "computer_call_output",
+      "call_id": "call_c2d9df1acfcd422f878adda9026d",
+      "acknowledged_safety_checks": [],
+      "output": {
+        "type": "input_image",
+        "image_url": "[omitted]"
+      }
+    }
+  ],
+  "created_at": "139774669034986880"
+}

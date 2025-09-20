@@ -1,0 +1,16 @@
+{
+  "trajectory_id": "2025-09-17_/med_gemini-1.5-pro_154736_f003",
+  "created_at": "139774312565409310",
+  "status": "running",
+  "kwargs": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Open Firefox browser. Expected output: The browser of Firefox is visible."
+      }
+    ],
+    "stream": true,
+    "model": "/media/peter/E/Computer-use/my_own_notebook/UI-Venus-Ground-7B.Q8_0.gguf+gemini/gemini-1.5-pro",
+    "agent_loop": "ComposedGroundedConfig"
+  }
+}

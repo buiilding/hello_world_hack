@@ -1,0 +1,40 @@
+{
+  "trajectory_id": "2025-09-18_org__gemini-1.5-pro_172644_831d",
+  "created_at": "139775236044161030",
+  "status": "completed",
+  "kwargs": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "open up firefox browser using the command line"
+      }
+    ],
+    "stream": false,
+    "model": "org_orchestrator_gemini+gemini/gemini-1.5-pro",
+    "agent_loop": "OrchestratorGeminiConfig",
+    "grounding_model": "inclusionAI/UI-Venus-Ground-7B"
+  },
+  "completed_at": "139775236078552480",
+  "total_usage": {
+    "completion_tokens": 100,
+    "prompt_tokens": 281,
+    "total_tokens": 381,
+    "prompt_tokens_details": {
+      "text_tokens": 281
+    },
+    "response_cost": 0.0020334999999999997
+  },
+  "new_items": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "```json\n[\n  {\"id\": \"step1\", \"type\": \"programmer\", \"inputs\": {\"command\": \"firefox\"}, \"success_criteria\": \"Firefox process is running.\", \"retries\": 5},\n  {\"id\": \"step2\", \"type\": \"gui\", \"inputs\": {\"action\": \"screenshot\", \"window_title\": \"Firefox\"}, \"success_criteria\": \"Screenshot contains a Firefox window.\", \"retries\": 5}\n]\n```\n"
+        }
+      ]
+    }
+  ],
+  "total_turns": 1
+}
