@@ -164,7 +164,7 @@ class InternVLConfig(ComposedGroundedConfig):
         response = await litellm.acompletion(**api_kwargs)
         output_text = (response.choices[0].message.content or "").strip()  # type: ignore
 
-        print(f"InternVL output: {output_text}")
+        # print(f"InternVL output: {output_text}")
 
         # Try to parse a point first; if absent, parse bbox and take center
         point = _extract_first_point(output_text)

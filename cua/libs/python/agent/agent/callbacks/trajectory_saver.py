@@ -188,6 +188,8 @@ class TrajectorySaverCallback(AsyncCallbackHandler):
             model_name_short = model.split("+")[-1].split("/")[-1].lower()[:16]
             if "+" in model:
                 model_name_short = model.split("+")[0].lower()[:4] + "_" + model_name_short
+            # strip non-alphanumeric characters from model_name_short
+            model_name_short = ''.join(c for c in model_name_short if c.isalnum() or c == '_')
 
             # id format: yyyy-mm-dd_model_hhmmss_uuid[:4]
             now = datetime.now()

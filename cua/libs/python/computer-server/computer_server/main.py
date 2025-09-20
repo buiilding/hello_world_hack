@@ -17,6 +17,9 @@ import time
 import platform
 from fastapi.middleware.cors import CORSMiddleware
 
+# Authentication session TTL (in seconds). Override via env var CUA_AUTH_TTL_SECONDS. Default: 60s
+AUTH_SESSION_TTL_SECONDS: int = int(os.environ.get("CUA_AUTH_TTL_SECONDS", "60"))
+
 try:
     from agent import ComputerAgent
     HAS_AGENT = True
@@ -169,10 +172,10 @@ class AuthenticationManager:
                 ) as resp:
                     is_valid = resp.status == 200 and bool((await resp.text()).strip())
                     
-                    # Cache the result with 5 second expiration
+                    # Cache the result with configurable expiration
                     self.sessions[session_hash] = {
                         'valid': is_valid,
-                        'expires_at': time.time() + 5  # 5 seconds from now
+                        'expires_at': time.time() + AUTH_SESSION_TTL_SECONDS
                     }
                     
                     if is_valid:
@@ -187,7 +190,7 @@ class AuthenticationManager:
             # Cache failed result to avoid repeated requests
             self.sessions[session_hash] = {
                 'valid': False,
-                'expires_at': time.time() + 5
+                'expires_at': time.time() + AUTH_SESSION_TTL_SECONDS
             }
             return False
         except Exception as e:
@@ -195,7 +198,7 @@ class AuthenticationManager:
             # Cache failed result to avoid repeated requests
             self.sessions[session_hash] = {
                 'valid': False,
-                'expires_at': time.time() + 5
+                'expires_at': time.time() + AUTH_SESSION_TTL_SECONDS
             }
             return False
 
