@@ -4,7 +4,7 @@
 
 We’re bringing something new to [Hack the North](https://hackthenorth.com), Canada’s largest hackathon, this year: a head-to-head competition for **Computer-Use Agents** - on-site at Waterloo and a **Global online challenge**. From September 12–14, 2025, teams build on the **Cua Agent Framework** and are scored in **HUD’s OSWorld-Verified** environment to push past today’s SOTA on [OS-World](https://os-world.github.io).
 
-<img src="/hack-the-north.png">
+<img src="./assets/hack-the-north.png">
 
 ## Track A: On-site @ Hack the North
 

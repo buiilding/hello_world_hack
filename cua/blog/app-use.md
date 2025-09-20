@@ -8,10 +8,9 @@ Today, we are excited to introduce a new experimental feature landing in the [Cu
 
 Check out an example of a Cua Agent automating Cua's team Taco Bell order through the iPhone Mirroring app:
 
-<video width="100%" controls>
-  <source src="/demo_app_use.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/6362572e-f784-4006-aa6e-bce10991fab9" width="600" controls></video>
+</div>
 
 ## What is App-Use?
 

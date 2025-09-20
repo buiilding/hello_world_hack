@@ -2,7 +2,7 @@
 
 *Published on August 26, 2025 by Dillon DuPont*
 
-<img src="/composite-agents.png" alt="Composite Agents">
+<img src="./assets/composite-agents.png" alt="Composite Agents">
 
 So you want to build an agent that can use a computer. Great! You've probably discovered that there are now dozens of different AI models that claim they can click GUI buttons and fill out forms. Less great: actually getting them to work together is like trying to coordinate a group project where everyone speaks a different language and has invented seventeen different ways to say "click here".
 

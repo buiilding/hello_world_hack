@@ -12,10 +12,9 @@ Our Operator will run in an isolated macOS VM, by making use of our [cua-compute
 
 Check out what it looks like to use your own Operator from a Gradio app:
 
-<video width="100%" controls>
-  <source src="/demo_gradio.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/a2cf69ad-2ab2-4eb9-8e1a-45606dd7eec6" width="600" controls></video>
+</div>
 
 ## What You'll Learn
 

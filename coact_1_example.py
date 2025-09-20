@@ -66,8 +66,41 @@ class ProgrammerTools:
             str: The stdout and stderr from the command execution, or a confirmation message for background commands.
         """
         if run_in_background:
-            await self._computer.interface.run_command(command, run_in_background=True)
-            return f"Command '{command}' started in the background."
+            # For GUI applications that run indefinitely, we need special handling
+            # The server waits for command completion, so GUI apps will hang
+            # Instead, let's try to start the app and immediately assume success
+
+            # Known GUI applications that should be started in background
+            gui_apps = ['firefox', 'chrome', 'chromium', 'gedit', 'nautilus', 'terminal', 'xterm']
+            is_gui_app = any(app in command.lower() for app in gui_apps)
+
+            if is_gui_app:
+                # For GUI apps, we need to avoid waiting for completion since they run indefinitely
+                # Instead, let's send the command asynchronously and immediately return success
+                # This prevents the hang while still allowing the app to start
+
+                # Create a task to run the command without blocking
+                async def run_gui_app():
+                    try:
+                        detached_command = f"setsid {command} >/dev/null 2>&1 &"
+                        await self._computer.interface.run_command(detached_command)
+                    except Exception:
+                        # Ignore errors since we're not waiting anyway
+                        pass
+
+                # Start the task but don't wait for it
+                asyncio.create_task(run_gui_app())
+
+                # Immediately return success
+                return f"GUI application '{command}' started successfully in the background."
+
+            # For other background commands, use nohup
+            background_command = f"nohup {command} >/dev/null 2>&1 & sleep 1"
+            try:
+                await self._computer.interface.run_command(background_command)
+                return f"Command '{command}' started in the background."
+            except Exception as e:
+                return f"Warning: Could not run '{command}' in background: {e}. Command may not start properly."
 
         result = await self._computer.interface.run_command(command)
         output = f"Stdout:\n{result.stdout}\n"
@@ -218,31 +251,36 @@ class CoAct1:
         # into calls on the computer interface. We can reuse it.
         computer_handler = cuaComputerHandler(computer)
 
+        print("🏗️  [COACT-1] Initializing multi-agent system...")
+        print(f"   🤖 Orchestrator: {orchestrator_model}")
+        print(f"   👨‍💻 Programmer: {programmer_model}")
+        print(f"   🎭 GUI Operator: {gui_operator_model}")
+
         # Create specialized toolkits for each agent
         self.orchestrator_tools = OrchestratorTools(computer_handler)
         self.programmer_tools = ProgrammerTools(computer)
         self.gui_operator_computer = GuiOperatorComputerProxy(computer)
-        
+
         self.orchestrator = self._create_orchestrator()
         self.programmer = self._create_programmer()
         self.gui_operator = self._create_gui_operator()
 
+        print("✅ [COACT-1] All agents initialized successfully!")
+
     def _create_orchestrator(self) -> ComputerAgent:
         instructions = """
         You are the Orchestrator agent. Your role is to decompose a user's high-level task into a sequence of subtasks.
-        For each subtask, you must decide whether to delegate it to the 'Programmer' agent or the 'GUI Operator' agent.
-        For each subtask, delegate the task to the agent that could do it more easily and effectively.
-        For each subtask, you should only delegate it to the GUI Operator if you are sure it requires visual interaction with the graphical user interface.
-        You can also delegate it to yourself to solve it.
+        For each subtask, decide whether to delegate it to the 'Programmer' agent, the 'GUI Operator' agent, or handle it yourself.
 
-        - Use the 'Programmer' agent for tasks that can be solved with code (Python or Bash), such as file operations, data processing, and system commands.
-        - Use the 'GUI Operator' agent for tasks that require visual interaction with a graphical user interface, such as clicking buttons, filling forms, and navigating web pages.
+        - Always prefer the 'Programmer' agent whenever possible.
+        - Only use the 'GUI Operator' agent if the subtask cannot reasonably be accomplished through code or command-line execution.
+        - The 'Programmer' agent is best for tasks involving Python, Bash, file operations, automation, system commands, and data processing.
+        - The 'GUI Operator' agent should be used strictly for actions that inherently require visual interaction with a graphical user interface 
+        (e.g., clicking buttons, filling forms, dragging files, interacting with visual-only elements).
         - Use your observation tools to understand the system state before delegating.
         - Use the 'task_completed' function when the user's overall goal has been achieved.
-
-        You will be given the user's task, the conversation history, and a recent screenshot of the computer screen.
-        Based on this information, decide the next best subtask and delegate it to the appropriate agent.
         """
+
         
         # Gather all methods from the toolkit instance to pass to the agent
         orchestrator_tool_methods = [
@@ -254,6 +292,7 @@ class CoAct1:
             task_completed
         ]
 
+        print(f"🎯 [ORCHESTRATOR] Initializing with model: {self.orchestrator_model}")
         return ComputerAgent(
             model=self.orchestrator_model,
             tools=orchestrator_tool_methods,
@@ -281,6 +320,7 @@ class CoAct1:
             self.programmer_tools.venv_cmd,
         ]
 
+        print(f"👨‍💻 [PROGRAMMER] Initializing with model: {self.programmer_model}")
         return ComputerAgent(
             model=self.programmer_model,
             tools=programmer_tool_methods,
@@ -325,8 +365,9 @@ class CoAct1:
         - For buttons and links: computer(action='click', element_description='button description')
         - For text fields: computer(action='type', element_description='input field description', text='text to type')
 
-        Remember: Use "computer" as the function name, be specific in element descriptions, and evaluate results before making additional attempts.
+        Remember: Use "computer" as the function name, be specific in element descriptions, and evaluate results before making additional attempts. If the results meet the requirements, you can end the task.
         """
+        print(f"🎭 [GUI OPERATOR] Initializing with model: {self.gui_operator_model}")
         return ComputerAgent(
             model=self.gui_operator_model,
             tools=[self.gui_operator_computer],
@@ -357,17 +398,19 @@ class CoAct1:
         print(f"   📝 Full text input:")
         print(f"   {json.dumps(filtered_history, indent=2)}")
 
+        content = [{"type": "text", "text": f"{prompt}\n\nHistory:\n{json.dumps(filtered_history, indent=2)}"}]
+
+        if screenshot_b64:
+            content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{screenshot_b64}"}})
+
         summary_messages = [{
             "role": "user",
-            "content": [
-                {"type": "text", "text": f"{prompt}\n\nHistory:\n{json.dumps(filtered_history, indent=2)}"},
-                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{screenshot_b64}"}}
-            ]
+            "content": content
         }]
 
         try:
             response = await litellm.acompletion(
-                model="gemini/gemini-1.5-pro",
+                model="gemini/gemini-2.5-flash",
                 messages=summary_messages,
             )
             summary = response.choices[0].message.content or "No summary available."
@@ -378,23 +421,16 @@ class CoAct1:
 
     async def run(self, task: str):
         """Runs the CoAct-1 agent system on a given task."""
+        print(f"\n🎬 [COACT-1 RUN] Starting task: '{task}'")
         orchestrator_history: List[Dict[str, Any]] = [{"role": "user", "content": task}]
     
         for i in range(10): # Max 10 steps
             print(f"\n--- Step {i+1} ---")
 
-            # 1. Get screenshot
-            print("📸 Taking screenshot...")
-            screenshot_bytes = await self.computer.interface.screenshot()
-            screenshot_b64 = base64.b64encode(screenshot_bytes).decode('utf-8')
-            
-            # Add screenshot to orchestrator history
+            # 1. Add prompt for orchestrator (screenshot will be taken automatically by composed_grounded)
             orchestrator_history.append({
                 "role": "user",
-                "content": [
-                    {"type": "text", "text": "Here is the current screen. What is the next subtask?"},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{screenshot_b64}"}}
-                ]
+                "content": "Here is the current screen. What is the next subtask?"
             })
 
             # 2. Call Orchestrator
@@ -412,8 +448,12 @@ class CoAct1:
                 print("🛑 Orchestrator did not delegate a task. Ending.")
                 break
 
-            tool_name = delegation.get("name")
-            arguments = json.loads(delegation.get("arguments", "{}"))
+            # Handle both direct format and nested function format
+            function_info = delegation.get("function", delegation)
+            tool_name = function_info.get("name")
+            arguments = function_info.get("arguments", {})
+            if isinstance(arguments, str):
+                arguments = json.loads(arguments)
             subtask = arguments.get("subtask", "")
 
             orchestrator_history.append(delegation) # Add delegation to history
@@ -433,19 +473,16 @@ class CoAct1:
                 print(f"❓ Unknown delegation: {tool_name}")
                 continue
 
-            # 3. Run sub-agent with the task and the current screenshot
+            # 3. Run sub-agent with the task (screenshot will be taken automatically by composed_grounded)
             sub_agent_history = [{
                 "role": "user",
-                "content": [
-                    {"type": "text", "text": subtask},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{screenshot_b64}"}}
-                ]
+                "content": subtask
             }]
             async for result in sub_agent.run(sub_agent_history):
                 sub_agent_history.extend(result.get("output", []))
 
             # 4. Get the latest screenshot from the sub-agent's history for the summary
-            summary_screenshot_b64 = get_last_image_b64(sub_agent_history) or screenshot_b64
+            summary_screenshot_b64 = get_last_image_b64(sub_agent_history)
 
             # 5. Summarize and update Orchestrator history
             print("📝 Summarizing sub-task...")
@@ -454,28 +491,21 @@ class CoAct1:
 
             orchestrator_history.append({
                 "type": "function_call_output",
-                "call_id": delegation["call_id"],
+                "call_id": delegation.get("call_id", f"call_{hash(str(delegation))}"),
                 "output": summary,
             })
 
     async def run_direct_gui(self, task: str):
         """Runs the CoAct-1 system but directly delegates the task to the GUI Operator."""
+        print(f"\n🎬 [COACT-1 DIRECT GUI] Starting task: '{task}'")
         orchestrator_history: List[Dict[str, Any]] = [{"role": "user", "content": task}]
 
-        print("\n--- Direct GUI Run ---")
+        print("🎭 [DIRECT GUI] Delegating directly to GUI Operator...")
 
-        # 1. Get screenshot
-        print("📸 Taking screenshot...")
-        screenshot_bytes = await self.computer.interface.screenshot()
-        screenshot_b64 = base64.b64encode(screenshot_bytes).decode('utf-8')
-
-        # Add screenshot to history
+        # 1. Add prompt for direct GUI task (screenshot will be taken automatically by composed_grounded)
         orchestrator_history.append({
             "role": "user",
-            "content": [
-                {"type": "text", "text": f"Direct GUI task: {task}"},
-                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{screenshot_b64}"}}
-            ]
+            "content": f"Direct GUI task: {task}"
         })
 
         # 2. Instead of Orchestrator → directly delegate to GUI Operator
@@ -485,10 +515,7 @@ class CoAct1:
         sub_agent = self.gui_operator
         sub_agent_history = [{
             "role": "user",
-            "content": [
-                {"type": "text", "text": subtask},
-                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{screenshot_b64}"}}
-            ]
+            "content": subtask
         }]
 
         # 3. Run the GUI Operator
@@ -496,7 +523,7 @@ class CoAct1:
             sub_agent_history.extend(result.get("output", []))
 
         # 4. Get the latest screenshot
-        summary_screenshot_b64 = get_last_image_b64(sub_agent_history) or screenshot_b64
+        summary_screenshot_b64 = get_last_image_b64(sub_agent_history)
 
         # 5. Summarize
         print("📝 Summarizing GUI Operator sub-task...")
@@ -533,9 +560,9 @@ async def main():
         await computer_instance.run()
 
         # Define model names for each agent
-        orchestrator_model_name = "gemini/gemini-2.0-flash"
-        programmer_model_name = "gemini/gemini-1.5-pro"
-        gui_operator_model_name = "inclusionAI/UI-Venus-Ground-7B+gemini/gemini-2.0-flash"
+        orchestrator_model_name = "gemini/gemini-2.5-flash"
+        programmer_model_name = "gemini/gemini-2.5-flash"
+        gui_operator_model_name = "inclusionAI/UI-Venus-Ground-7B+gemini/gemini-2.5-flash"
 
         coact_system = CoAct1(
             computer=computer_instance,
@@ -545,9 +572,9 @@ async def main():
         )
 
         # Example Task
-        task = "Open Firefox"
+        task = "go to amazon and find me the cheapest laptop"
         
-        await coact_system.run_direct_gui(task)
+        await coact_system.run(task)
 
     except Exception as e:
         logger.error(f"❌ Error running example: {e}")

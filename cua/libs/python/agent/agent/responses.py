@@ -563,32 +563,53 @@ def convert_responses_items_to_completion_messages(messages: List[Dict[str, Any]
             call_id = message.get("call_id")
             
             if isinstance(output, dict) and output.get("type") == "input_image":
+                # Get action description if available
+                action_description = output.get("action_description", "[Execution completed. See screenshot below]")
+
                 if allow_images_in_tool_results:
-                    # Handle image output as tool response (may not work with all APIs)
+                    # Create content list with text and image
+                    content = []
+
+                    # Add action description as text
+                    if action_description:
+                        content.append({
+                            "type": "text",
+                            "text": action_description
+                        })
+
+                    # Add image
+                    content.append({
+                        "type": "image_url",
+                        "image_url": {
+                            "url": output.get("image_url")
+                        }
+                    })
+
                     completion_messages.append({
                         "role": "tool",
                         "tool_call_id": call_id,
-                        "content": [{
-                            "type": "image_url",
-                            "image_url": {
-                                "url": output.get("image_url")
-                            }
-                        }]
+                        "content": content
                     })
                 else:
                     # Send tool message + separate user message with image (OpenAI compatible)
                     completion_messages += [{
                         "role": "tool",
                         "tool_call_id": call_id,
-                        "content": "[Execution completed. See screenshot below]"
+                        "content": action_description
                     }, {
                         "role": "user",
-                        "content": [{
-                            "type": "image_url",
-                            "image_url": {
-                                "url": output.get("image_url")
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": action_description
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": output.get("image_url")
+                                }
                             }
-                        }]
+                        ]
                     }]
             else:
                 # Handle text output as tool response

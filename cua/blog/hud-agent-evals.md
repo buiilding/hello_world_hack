@@ -6,7 +6,7 @@ You can now benchmark any GUI-capable agent on real computer-use tasks through o
 
 If [yesterday's 0.4 release](composite-agents.md) made it easy to compose planning and grounding models, today's update makes it easy to measure them. Configure your model, run evaluations at scale, and watch traces live in HUD.
 
-<img src="/hud-agent-evals.png" alt="Cua × HUD">
+<img src="./assets/hud-agent-evals.png" alt="Cua × HUD">
 
 ## What you get
 

@@ -36,7 +36,7 @@ The viewer allows you to see exactly what your agent observed and how it interac
 2. **Upload**: Drag and drop a trajectories folder or click Select Folder.
 3. **Explore**: View your agent’s trajectories! All data stays in your browser unless you give permission otherwise.
 
-![Trajectory Viewer Screenshot](/trajectory-viewer.jpeg)
+![Trajectory Viewer Screenshot](./assets/trajectory-viewer.jpeg)
 
 ## Recording a Trajectory
 

@@ -4,7 +4,7 @@
 
 Today we’re shipping **Ubuntu Docker support** in Cua. You get a full Linux desktop inside a Docker container, viewable right in your browser—no VM spin-up, no extra clients. It behaves the same on macOS, Windows, and Linux.
 
-<img src="/docker-ubuntu-support.png" alt="Cua + KasmVNC Ubuntu container desktop">
+<img src="./assets/docker-ubuntu-support.png" alt="Cua + KasmVNC Ubuntu container desktop">
 
 ## Why we did this
 

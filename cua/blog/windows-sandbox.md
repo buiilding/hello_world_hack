@@ -12,10 +12,9 @@ Most of us develop on macOS, so we hadn't considered Windows as a primary target
 
 So last month, we started working on Windows support for [RPA (Robotic Process Automation)](https://en.wikipedia.org/wiki/Robotic_process_automation). Here's the twist: **the perfect development environment was already sitting on every Windows machine** - we just had to unlock it.
 
-<video width="100%" controls>
-  <source src="/demo_wsb.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/7abbdaf4-054f-4965-8260-81dab497c6ba" width="600" controls></video>
+</div>
 
 ## Our Journey to Windows CUA Support
 

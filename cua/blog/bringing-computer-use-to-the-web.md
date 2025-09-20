@@ -8,10 +8,9 @@ Today, we're excited to announce the release of the **`@trycua/computer` Web SDK
 
 With this new SDK, you can easily develop CUA experiences like the one below, which we will release soon as open source.
 
-<video width="100%" controls>
-  <source src="/playground_web_ui_sdk_sample.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/e213d6c3-73b6-48dd-a7d9-ed761ed74f89" width="600" controls></video>
+</div>
 
 Let’s see how it works.
 

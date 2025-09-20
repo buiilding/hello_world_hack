@@ -112,17 +112,40 @@ def _prepare_tools_for_grounded(tool_schemas: List[Dict[str, Any]]) -> List[Dict
     
     return grounded_tools
 
-def get_last_computer_call_image(messages: List[Dict[str, Any]]) -> Optional[str]:
-    """Get the last computer call output image from messages."""
+def get_last_image_b64(messages: List[Dict[str, Any]]) -> Optional[str]:
+    """Get the last image from a list of messages, checking both user messages and tool outputs."""
     for message in reversed(messages):
-        if (isinstance(message, dict) and 
-            message.get("type") == "computer_call_output" and
-            isinstance(message.get("output"), dict) and
-            message["output"].get("type") == "input_image"):
-            image_url = message["output"].get("image_url", "")
-            if image_url.startswith("data:image/png;base64,"):
-                return image_url.split(",", 1)[1]
+        # Check user messages with content lists
+        if message.get("role") == "user" and isinstance(message.get("content"), list):
+            for content_item in reversed(message["content"]):
+                if content_item.get("type") == "image_url":
+                    image_url = content_item.get("image_url", {}).get("url", "")
+                    if image_url.startswith("data:image/png;base64,"):
+                        return image_url.split(",", 1)[1]
+        
+        # Check computer call outputs
+        elif message.get("type") == "computer_call_output" and isinstance(message.get("output"), dict):
+            output = message["output"]
+            if output.get("type") == "input_image":
+                image_url = output.get("image_url", "")
+                if image_url.startswith("data:image/png;base64,"):
+                    return image_url.split(",", 1)[1]
     return None
+
+def get_failed_coordinates(messages: List[Dict[str, Any]]) -> List[Tuple[int, int]]:
+    """Extract coordinates from failed computer calls in the conversation history."""
+    failed_coords = []
+    
+    for message in messages:
+        # Look for computer calls that were executed but may have failed
+        if message.get("type") == "computer_call" and "action" in message:
+            action = message["action"]
+            if "x" in action and "y" in action:
+                x, y = action["x"], action["y"]
+                # Check if this call was followed by an error or if it's in a sequence of attempts
+                failed_coords.append((x, y))
+    
+    return failed_coords
 
 
 @register_agent(r".*\+.*", priority=1)
@@ -136,6 +159,7 @@ class ComposedGroundedConfig(AsyncAgentConfig):
     
     def __init__(self):
         self.desc2xy: Dict[str, Tuple[float, float]] = {}
+        self.grounding_agents: Dict[str, Any] = {}
     
     async def predict_step(
         self,
@@ -170,61 +194,52 @@ class ComposedGroundedConfig(AsyncAgentConfig):
             raise ValueError(f"Composed model must be in format 'grounding_model+thinking_model', got: {model}")
         grounding_model, thinking_model = model.split("+", 1)
         
-        pre_output_items = []
+        # Step 0: Find the latest screenshot from the history
+        last_image_b64 = get_last_image_b64(messages)
         
-        # Step 0: Store last computer call image, if none then take a screenshot
-        last_image_b64 = get_last_computer_call_image(messages)
-        if last_image_b64 is None:
-            # Take a screenshot
-            screenshot_b64 = await computer_handler.screenshot() # type: ignore
-            if screenshot_b64:
-                
-                call_id = uuid.uuid4().hex
-                pre_output_items += [
-                    {
-                        "type": "message",
-                        "role": "assistant",
-                        "content": [
-                            {
-                                "type": "output_text",
-                                "text": "Taking a screenshot to see the current computer screen."
-                            }
-                        ]
-                    },
-                    {
-                        "action": {
-                            "type": "screenshot"
-                        },
-                        "call_id": call_id,
-                        "status": "completed",
-                        "type": "computer_call"
-                    },
-                    {
-                        "type": "computer_call_output",
-                        "call_id": call_id,
-                        "output": {
-                            "type": "input_image",
-                            "image_url": f"data:image/png;base64,{screenshot_b64}"
-                        }
-                    },
-                ]
-                last_image_b64 = screenshot_b64
-                
-                # Call screenshot callback if provided
-                if _on_screenshot:
-                    await _on_screenshot(screenshot_b64)
+        # Step 0.1: If no screenshot exists, take one automatically
+        if not last_image_b64 and computer_handler:
+            print("📸 No screenshot found in history, taking automatic screenshot...")
+            try:
+                last_image_b64 = await computer_handler.screenshot()
+                print(f"   ✅ Screenshot taken successfully ({len(last_image_b64)} chars)")
+            except Exception as e:
+                print(f"   ❌ Failed to take screenshot: {e}")
+                last_image_b64 = None
+        
+        # Step 0.5: Get failed coordinates from previous attempts
+        failed_coords = get_failed_coordinates(messages)
         
         tool_schemas = _prepare_tools_for_grounded(tools) # type: ignore
 
         # Step 1: Convert computer calls from xy to descriptions
-        input_messages = messages + pre_output_items
-        messages_with_descriptions = convert_computer_calls_xy2desc(input_messages, self.desc2xy)
+        messages_with_descriptions = convert_computer_calls_xy2desc(messages, self.desc2xy)
         
         # Step 2: Convert responses items to completion messages
         completion_messages = convert_responses_items_to_completion_messages(
             messages_with_descriptions, 
             allow_images_in_tool_results=False
         )
+        
+        # Step 2.1: If we have a screenshot and the last message is from user, add it to the message
+        if last_image_b64 and completion_messages:
+            last_message = completion_messages[-1]
+            if last_message.get("role") == "user":
+                # Convert text content to list format if it's a string
+                if isinstance(last_message.get("content"), str):
+                    last_message["content"] = [
+                        {"type": "text", "text": last_message["content"]},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/png;base64,{last_image_b64}"}
+                        }
+                    ]
+                elif isinstance(last_message.get("content"), list):
+                    # Add image to existing content list
+                    last_message["content"].append({
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{last_image_b64}"}
+                    })
         
         # Step 3: Call thinking model with litellm.acompletion
         api_kwargs = {
@@ -242,9 +257,44 @@ class ComposedGroundedConfig(AsyncAgentConfig):
         # Call API start hook
         if _on_api_start:
             await _on_api_start(api_kwargs)
-        
+
+        # Log the thinking model call
+        print(f"🤔 [THINKING MODEL: {thinking_model}] Making API call with {len(completion_messages)} messages")
+        for i, msg in enumerate(completion_messages):
+            role = msg.get("role", "")
+            content = msg.get("content", "")
+            print(f"   Message {i}: role={role}")
+
+            if role == "user":
+                if isinstance(content, list):
+                    has_text = False
+                    image_count = 0
+                    for item in content:
+                        if item.get("type") == "text":
+                            has_text = True
+                            print(f"     📝 Text: {item['text'][:100]}{'...' if len(item['text']) > 100 else ''}")
+                        elif item.get("type") == "image_url":
+                            image_count += 1
+                            print("     🖼️  Image present")
+                    print(f"     📊 Summary: has_text={has_text}, images={image_count}")
+                    if not has_text and image_count > 0:
+                        print("     ⚠️  WARNING: User message has images but no text!")
+                else:
+                    print(f"     📝 String content: {content[:100]}{'...' if len(content) > 100 else ''}")
+
         # Make the completion call
         response = await litellm.acompletion(**api_kwargs)
+
+        # Log the thinking model response
+        print(f"✅ [THINKING MODEL: {thinking_model}] Received response")
+        choice = response.choices[0]
+        if hasattr(choice.message, 'content') and choice.message.content:
+            print(f"   💬 Response: {choice.message.content[:300]}{'...' if len(choice.message.content) > 300 else ''}")
+        if hasattr(choice.message, 'tool_calls') and choice.message.tool_calls:
+            print(f"   🔧 Tool calls: {len(choice.message.tool_calls)}")
+            for tc in choice.message.tool_calls[:2]:  # Show first 2 tool calls
+                if tc.function:
+                    print(f"      • {tc.function.name}: {tc.function.arguments[:200]}{'...' if len(tc.function.arguments) > 200 else ''}")
         
         # Call API end hook
         if _on_api_end:
@@ -271,27 +321,60 @@ class ComposedGroundedConfig(AsyncAgentConfig):
         
         if element_descriptions and last_image_b64:
             # Use grounding model to predict coordinates for each description
-            grounding_agent_conf = find_agent_config(grounding_model)
-            if grounding_agent_conf:
-                grounding_agent = grounding_agent_conf.agent_class()
-                
+            print(f"🎯 Grounding phase: Processing {len(element_descriptions)} element descriptions")
+            print(f"   Descriptions: {element_descriptions}")
+
+            # Get or create cached grounding agent
+            if grounding_model not in self.grounding_agents:
+                grounding_agent_conf = find_agent_config(grounding_model)
+                if grounding_agent_conf:
+                    self.grounding_agents[grounding_model] = grounding_agent_conf.agent_class()
+                    print(f"   Instantiated grounding agent: {grounding_agent_conf.agent_class.__name__}")
+                else:
+                    self.grounding_agents[grounding_model] = None
+            
+            grounding_agent = self.grounding_agents.get(grounding_model)
+
+            if grounding_agent:
+                print(f"   Using grounding agent: {grounding_agent.__class__.__name__}")
+
                 for desc in element_descriptions:
-                    for _ in range(3): # try 3 times
+                    print(f"   🔍 Grounding element: '{desc}'")
+                    success = False
+                    for attempt in range(3): # try 3 times
+                        print(f"     Attempt {attempt + 1}/3...")
+                        
+                        # Enhance instruction with failed coordinates if available
+                        enhanced_instruction = desc
+                        if failed_coords and attempt > 0:
+                            failed_coords_str = ", ".join([f"({x}, {y})" for x, y in failed_coords])
+                            enhanced_instruction = f"{desc}. Avoid these previously failed coordinates: {failed_coords_str}"
+                            print(f"     📍 Enhanced instruction with failed coords: {enhanced_instruction}")
+                        
                         coords = await grounding_agent.predict_click(
                             model=grounding_model,
                             image_b64=last_image_b64,
-                            instruction=desc
+                            instruction=enhanced_instruction,
+                            **kwargs
                         )
                         if coords:
                             self.desc2xy[desc] = coords
+                            print(f"     ✅ Success! Coordinates: ({coords[0]}, {coords[1]})")
+                            success = True
                             break
+                        else:
+                            print(f"     ❌ Attempt {attempt + 1} failed")
+                    if not success:
+                        print(f"     💥 All attempts failed for element: '{desc}'")
+            else:
+                print(f"   ❌ No grounding agent config found for model: {grounding_model}")
         
         # Step 6: Convert computer calls from descriptions back to xy coordinates
         final_output_items = convert_computer_calls_desc2xy(thinking_output_items, self.desc2xy)
         
         # Step 7: Return output and usage
         return {
-            "output": pre_output_items + final_output_items,
+            "output": final_output_items,
             "usage": usage
         }
     

@@ -320,12 +320,14 @@ class ComputerAgent:
                 # Use litellm.utils.function_to_dict to extract schema from docstring
                 try:
                     function_schema = litellm.utils.function_to_dict(tool)
+                    print(f"📋 [TOOL REGISTRATION] Registered tool: {function_schema.get('name', 'unknown')} from {tool}")
                     schemas.append({
                         "type": "function",
                         "function": function_schema
                     })
                 except Exception as e:
                     print(f"Warning: Could not process tool {tool}: {e}")
+                    print(f"   Tool details: name={getattr(tool, '__name__', 'no-name')}, type={type(tool)}")
             else:
                 print(f"Warning: Unknown tool type: {tool}")
         
@@ -333,11 +335,18 @@ class ComputerAgent:
     
     def _get_tool(self, name: str) -> Optional[Callable]:
         """Get a tool by name"""
+        print(f"🔍 [TOOL LOOKUP] Looking for tool: '{name}'")
         for tool in self.tools:
-            if hasattr(tool, '__name__') and tool.__name__ == name:
+            tool_name = getattr(tool, '__name__', None)
+            func_name = getattr(getattr(tool, 'func', None), '__name__', None)
+            print(f"   Checking tool: __name__='{tool_name}', func.__name__='{func_name}'")
+            if tool_name == name:
+                print(f"   ✅ Found tool by __name__: {tool}")
                 return tool
-            elif hasattr(tool, 'func') and tool.func.__name__ == name:
+            elif func_name == name:
+                print(f"   ✅ Found tool by func.__name__: {tool}")
                 return tool
+        print(f"   ❌ Tool '{name}' not found")
         return None
     
     # ============================================================================
@@ -474,26 +483,69 @@ class ComputerAgent:
                 if action_type is None:
                     print(f"Action type cannot be `None`: action={action}, action_type={action_type}")
                     return []
-                
+
                 # Extract action arguments (all fields except 'type')
                 action_args = {k: v for k, v in action.items() if k != "type"}
-                
+
                 # print(f"{action_type}({action_args})")
-                
+
                 # Execute the computer action
-                computer_method = getattr(computer, action_type, None)
-                if computer_method:
-                    assert_callable_with(computer_method, **action_args)
-                    await computer_method(**action_args)
+                if action_type == "keypress":
+                    # Handle keypress actions specially
+                    keys = action_args.get("keys", [])
+                    if isinstance(keys, list):
+                        if len(keys) == 1:
+                            # Single key - use press_key
+                            await computer.press_key(keys[0])
+                        else:
+                            # Multiple keys - use hotkey
+                            await computer.hotkey(*keys)
+                    else:
+                        # Single key as string
+                        await computer.press_key(keys)
                 else:
-                    raise ToolError(f"Unknown computer action: {action_type}")
-                
+                    # Handle other actions normally
+                    computer_method = getattr(computer, action_type, None)
+                    if computer_method:
+                        assert_callable_with(computer_method, **action_args)
+                        await computer_method(**action_args)
+                    else:
+                        raise ToolError(f"Unknown computer action: {action_type}")
+
                 # Take screenshot after action
                 if self.screenshot_delay and self.screenshot_delay > 0:
                     await asyncio.sleep(self.screenshot_delay)
                 screenshot_base64 = await computer.screenshot()
                 await self._on_screenshot(screenshot_base64, "screenshot_after")
-                
+
+                # Create descriptive text for the action performed
+                action_desc_parts = []
+                action_desc_parts.append(f"✅ Action executed: {action_type}")
+
+                # Add specific details based on action type
+                if action_type in ["click", "double_click", "move"] and "x" in action and "y" in action:
+                    x, y = action["x"], action["y"]
+                    action_desc_parts.append(f"at coordinates ({x}, {y})")
+                    action_desc_parts.append(f"✅ UI-Venus-Ground prediction: ({x}, {y})")
+                    action_desc_parts.append(f"✅ Success! Coordinates: ({x}, {y})")
+                elif action_type == "type" and "text" in action:
+                    text = action["text"]
+                    text_display = text[:50] + "..." if len(text) > 50 else text
+                    action_desc_parts.append(f"with text: '{text_display}'")
+                elif action_type == "keypress" and "keys" in action:
+                    keys = action["keys"]
+                    if isinstance(keys, list):
+                        action_desc_parts.append(f"with keys: {', '.join(keys)}")
+                    else:
+                        action_desc_parts.append(f"with key: {keys}")
+                elif action_type == "scroll" and ("scroll_x" in action or "scroll_y" in action):
+                    scroll_x = action.get("scroll_x", 0)
+                    scroll_y = action.get("scroll_y", 0)
+                    action_desc_parts.append(f"with scroll amounts ({scroll_x}, {scroll_y})")
+
+                action_description = " | ".join(action_desc_parts)
+                print(f"🔧 [ACTION EXECUTED] {action_description}")
+
                 # Handle safety checks
                 pending_checks = item.get("pending_safety_checks", [])
                 acknowledged_checks = []
@@ -505,8 +557,8 @@ class ComputerAgent:
                     #     acknowledged_checks.append(check)
                     # else:
                     #     raise ValueError(f"Safety check failed: {check_message}")
-                
-                # Create call output
+
+                # Create call output with both text and image
                 call_output = {
                     "type": "computer_call_output",
                     "call_id": item.get("call_id"),
@@ -514,16 +566,17 @@ class ComputerAgent:
                     "output": {
                         "type": "input_image",
                         "image_url": f"data:image/png;base64,{screenshot_base64}",
+                        "action_description": action_description,
                     },
                 }
-                
+
                 # # Additional URL safety checks for browser environments
                 # if await computer.get_environment() == "browser":
                 #     current_url = await computer.get_current_url()
                 #     call_output["output"]["current_url"] = current_url
                 #     # TODO: implement a callback for URL safety checks
                 #     # check_blocklisted_url(current_url)
-                
+
                 result = [call_output]
                 await self._on_computer_call_end(item, result)
                 return result
@@ -531,11 +584,21 @@ class ComputerAgent:
             if item_type == "function_call":
                 await self._on_function_call_start(item)
                 # Perform function call
-                function = self._get_tool(item.get("name"))
+
+                # Handle both nested function format and direct format
+                function_info = item.get("function", item)
+                function_name = function_info.get("name")
+                function_args = function_info.get("arguments", {})
+
+                function = self._get_tool(function_name)
                 if not function:
-                    raise ToolError(f"Function {item.get("name")} not found")
-            
-                args = json.loads(item.get("arguments"))
+                    raise ToolError(f"Function {function_name} not found")
+
+                # Ensure args is a dict
+                if isinstance(function_args, str):
+                    args = json.loads(function_args)
+                else:
+                    args = function_args
 
                 # Validate arguments before execution
                 assert_callable_with(function, **args)
@@ -584,7 +647,11 @@ class ComputerAgent:
         """
         if not self.agent_config_info:
             raise ValueError("Agent configuration not found")
-        
+
+        # Log which agent is being used
+        agent_class_name = self.agent_config_info.agent_class.__name__
+        print(f"🚀 [COMPUTER AGENT] Using agent: {agent_class_name} for model: {self.model}")
+
         capabilities = self.get_capabilities()
         if "step" not in capabilities:
             raise ValueError(f"Agent loop {self.agent_config_info.agent_class.__name__} does not support step predictions")
@@ -691,20 +758,38 @@ class ComputerAgent:
         """
         if not self.agent_config_info:
             raise ValueError("Agent configuration not found")
-        
+
+        # Log which agent is being used
+        agent_class_name = self.agent_config_info.agent_class.__name__
+        print(f"🎯 [CLICK PREDICTION] Using agent: {agent_class_name} for model: {self.model}")
+        print(f"   📝 Instruction: '{instruction[:100]}{'...' if len(instruction) > 100 else ''}'")
+
         capabilities = self.get_capabilities()
         if "click" not in capabilities:
             raise ValueError(f"Agent loop {self.agent_config_info.agent_class.__name__} does not support click predictions")
+
         if hasattr(self.agent_loop, 'predict_click'):
             if not image_b64:
                 if not self.computer_handler:
                     raise ValueError("Computer tool or image_b64 is required for predict_click")
+                print("   📸 Taking screenshot for click prediction...")
                 image_b64 = await self.computer_handler.screenshot()
-            return await self.agent_loop.predict_click(
+
+            print(f"   🖼️  Image size: {len(image_b64) if image_b64 else 0} chars")
+
+            coordinates = await self.agent_loop.predict_click(
                 model=self.model,
                 image_b64=image_b64,
                 instruction=instruction
             )
+
+            # Log the result
+            if coordinates:
+                print(f"✅ [CLICK PREDICTION] Success: ({coordinates[0]}, {coordinates[1]})")
+            else:
+                print("❌ [CLICK PREDICTION] Failed to predict coordinates")
+
+            return coordinates
         return None
     
     def get_capabilities(self) -> List[AgentCapability]:

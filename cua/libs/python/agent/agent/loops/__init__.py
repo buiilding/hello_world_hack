@@ -9,20 +9,24 @@ from . import uitars
 from . import omniparser
 from . import gta1
 from . import composed_grounded
+from . import generic
 from . import glm45v
 from . import opencua
 from . import internvl
 from . import holo
+from . import ui_venus_ground
 
 __all__ = [
-    "anthropic", 
-    "openai", 
-    "uitars", 
-    "omniparser", 
-    "gta1", 
-    "composed_grounded", 
-    "glm45v", 
+    "anthropic",
+    "openai",
+    "uitars",
+    "omniparser",
+    "gta1",
+    "composed_grounded",
+    "generic",
+    "glm45v",
     "opencua",
     "internvl",
     "holo",
+    "ui_venus_ground",
 ]

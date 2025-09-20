@@ -6,10 +6,9 @@ Sometimes the best AI agent is a human. Whether you're creating training demonst
 
 With yesterday's [HUD evaluation integration](hud-agent-evals.md), you could benchmark any agent at scale. Today's update lets you *become* the agent when it matters most—seamlessly switching between automated intelligence and human judgment.
 
-<video width="100%" controls>
-  <source src="/human-in-the-loop.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/9091b50f-26e7-4981-95ce-40e5d42a1260" width="600" controls></video>
+</div>
 
 ## What you get
 
