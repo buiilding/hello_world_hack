@@ -151,9 +151,10 @@ class CustomComputerHandler(AsyncComputerHandler):
             await self._call_function(self.functions['double_click'], x, y)
         # No-op if not implemented
     
-    async def scroll(self, x: int, y: int, scroll_x: int, scroll_y: int) -> None:
+    async def scroll(self, x: int = 0, y: int = 0, scroll_x: int = 0, scroll_y: int = 0) -> None:
         """Scroll at coordinates with specified scroll amounts."""
         if 'scroll' in self.functions:
+            # Pass all parameters to the scroll function - it will handle the logic
             await self._call_function(self.functions['scroll'], x, y, scroll_x, scroll_y)
         # No-op if not implemented
     

@@ -51,62 +51,57 @@ logger = logging.getLogger(__name__)
 
 class ProgrammerTools:
     """A toolkit for the Programmer agent that provides code and system-level tools."""
+
     def __init__(self, computer: Computer):
         self._computer = computer
 
-    async def run_command(self, command: str, run_in_background: bool = False) -> str:
+    async def run_command(self, command: str) -> str:
         """
-        Runs a shell command in the computer's environment and returns the output.
+        Runs a shell command and waits for output.
+        Use this for commands where you need to see the results (ls, cat, grep, etc.).
 
         Args:
             command (str): The shell command to execute.
-            run_in_background (bool): Whether to run the command in the background. Use this for starting applications. Defaults to False.
 
         Returns:
-            str: The stdout and stderr from the command execution, or a confirmation message for background commands.
+            str: The command output.
         """
-        if run_in_background:
-            # For GUI applications that run indefinitely, we need special handling
-            # The server waits for command completion, so GUI apps will hang
-            # Instead, let's try to start the app and immediately assume success
+        try:
+            result = await self._computer.interface.run_command(command)
+            output = f"Stdout:\n{result.stdout}\n"
+            if result.stderr:
+                output += f"Stderr:\n{result.stderr}\n"
+            return output
+        except Exception as e:
+            return f"Error running command '{command}': {e}"
 
-            # Known GUI applications that should be started in background
-            gui_apps = ['firefox', 'chrome', 'chromium', 'gedit', 'nautilus', 'terminal', 'xterm']
-            is_gui_app = any(app in command.lower() for app in gui_apps)
+    async def run_command_in_background(self, command: str) -> str:
+        """
+        Runs a shell command in the background without waiting for output.
+        Use this for opening applications (firefox, chrome, xterm, etc.).
 
-            if is_gui_app:
-                # For GUI apps, we need to avoid waiting for completion since they run indefinitely
-                # Instead, let's send the command asynchronously and immediately return success
-                # This prevents the hang while still allowing the app to start
+        Args:
+            command (str): The shell command to execute.
 
-                # Create a task to run the command without blocking
-                async def run_gui_app():
-                    try:
-                        detached_command = f"setsid {command} >/dev/null 2>&1 &"
-                        await self._computer.interface.run_command(detached_command)
-                    except Exception:
-                        # Ignore errors since we're not waiting anyway
-                        pass
+        Returns:
+            str: Confirmation that the command was started in background.
+        """
+        # Run command in background with complete detachment
+        background_command = f"setsid {command} >/dev/null 2>&1 &"
 
-                # Start the task but don't wait for it
-                asyncio.create_task(run_gui_app())
-
-                # Immediately return success
-                return f"GUI application '{command}' started successfully in the background."
-
-            # For other background commands, use nohup
-            background_command = f"nohup {command} >/dev/null 2>&1 & sleep 1"
+        # Create a task to run the command without blocking
+        async def run_background_command():
             try:
                 await self._computer.interface.run_command(background_command)
-                return f"Command '{command}' started in the background."
-            except Exception as e:
-                return f"Warning: Could not run '{command}' in background: {e}. Command may not start properly."
+            except Exception:
+                # Ignore errors since we're not waiting anyway
+                pass
 
-        result = await self._computer.interface.run_command(command)
-        output = f"Stdout:\n{result.stdout}\n"
-        if result.stderr:
-            output += f"Stderr:\n{result.stderr}\n"
-        return output
+        # Start the task but don't wait for it
+        asyncio.create_task(run_background_command())
+
+        # Return immediately - no output capture, no waiting
+        return f"Command '{command}' started in background."
 
     async def list_dir(self, path: str) -> List[str]:
         """Lists the contents of a directory."""
@@ -161,8 +156,8 @@ def get_last_image_b64(messages: List[Dict[str, Any]]) -> Optional[str]:
             for content_item in reversed(message["output"]):
                 if content_item.get("type") == "image_url":
                     image_url = content_item.get("image_url", {}).get("url", "")
-                    if image_url.startswith("data:image/png;base64,"):
-                        return image_url.split(",", 1)[1]
+                if image_url.startswith("data:image/png;base64,"):
+                    return image_url.split(",", 1)[1]
     return None
 
 class GuiOperatorComputerProxy:
@@ -201,7 +196,26 @@ class GuiOperatorComputerProxy:
             # GUI Screen Methods
             async def screenshot(self): return await self._real_interface.screenshot()
             async def get_screen_size(self): return await self._real_interface.get_screen_size()
-            async def scroll(self, x: int, y: int, scroll_x: int, scroll_y: int): return await self._real_interface.scroll(x, y)
+            async def scroll(self, x: int = 0, y: int = 0, scroll_x: int = 0, scroll_y: int = 0):
+                """Handle scrolling with scroll amounts."""
+                # Use scroll_down/scroll_up for vertical scrolling by amounts
+                if scroll_y > 0:
+                    # Scroll down by the specified amount
+                    clicks = max(1, scroll_y // 100)  # Convert scroll amount to clicks
+                    if hasattr(self._real_interface, 'scroll_down'):
+                        return await self._real_interface.scroll_down(clicks)
+                    else:
+                        return await self._real_interface.scroll(x, y)
+                elif scroll_y < 0:
+                    # Scroll up by the specified amount
+                    clicks = max(1, abs(scroll_y) // 100)  # Convert scroll amount to clicks
+                    if hasattr(self._real_interface, 'scroll_up'):
+                        return await self._real_interface.scroll_up(clicks)
+                    else:
+                        return await self._real_interface.scroll(x, y)
+                else:
+                    # No vertical scroll, just use coordinates
+                    return await self._real_interface.scroll(x, y)
 
         return GuiInterfaceProxy(real_interface)
 
@@ -268,7 +282,7 @@ class CoAct1:
         self.orchestrator_tools = OrchestratorTools(computer_handler)
         self.programmer_tools = ProgrammerTools(computer)
         self.gui_operator_computer = GuiOperatorComputerProxy(computer)
-
+        
         self.orchestrator = self._create_orchestrator()
         self.programmer = self._create_programmer()
         self.gui_operator = self._create_gui_operator()
@@ -277,23 +291,65 @@ class CoAct1:
 
     def _create_orchestrator(self) -> ComputerAgent:
         instructions = """
-        You are the Orchestrator agent. Your role is to decompose a user's high-level task into a sequence of subtasks.
+        You are the Orchestrator agent. Your role is to decompose a user's high-level task into a sequence of simple, manageable subtasks.
+        
+        TASK DECOMPOSITION PRINCIPLE:
+        - Analyze BOTH the user's text input AND the current screenshot to understand the starting state
+        - Break down complex tasks into the SMALLEST possible steps - the easier, the better
+        - Each subtask should be a single, clear action that can be completed in one step
+        - Consider what you can see on the current screen when planning the first subtask
+        - Start with the most basic action needed to begin the task
+        
         For each subtask, decide whether to delegate it to the 'Programmer' agent, the 'GUI Operator' agent, or handle it yourself.
 
-        - Always prefer the 'Programmer' agent whenever possible.
+        DELEGATION STRATEGY:
+        - Always prefer the 'Programmer' agent whenever possible for efficiency and reliability.
         - Only use the 'GUI Operator' agent if the subtask cannot reasonably be accomplished through code or command-line execution.
-        - The 'Programmer' agent is best for tasks involving Python, Bash, file operations, automation, system commands, and data processing.
-        - The 'GUI Operator' agent should be used strictly for actions that inherently require visual interaction with a graphical user interface
-        (e.g., clicking buttons, filling forms, dragging files, interacting with visual-only elements).
-        - Use your observation tools to understand the system state before delegating.
+        
+        PROGRAMMER AGENT - Use for:
+        - Opening applications (e.g., "Open Firefox Web Browser" → delegate to Programmer with run_command_in_background("firefox"))
+        - File operations and system commands (e.g., "Check if file exists" → delegate to Programmer with run_command("ls filename"))
+        - Any task that can be accomplished with shell commands
+        
+        GUI OPERATOR AGENT - Use for:
+        - Visual interactions that require seeing the screen (clicking buttons, filling forms)
+        - Web browsing and navigation that requires visual feedback
+        - Interacting with graphical applications that don't have command-line interfaces
+        - Drag-and-drop operations
+        - Visual element selection and manipulation
+        - Tasks requiring visual confirmation of results
 
-        IMPORTANT: After each sub-agent completes a task, you will receive both a text summary of their actions AND a screenshot showing the final screen state.
+        TASK DECOMPOSITION EXAMPLES:
+        
+        Example 1: User says "Open Firefox" + Screenshot shows desktop
+        - Analysis: Desktop is visible, need to open Firefox browser
+        - Subtask 1: Delegate to Programmer: "Open Firefox Web Browser using run_command_in_background"
+        - Reason: Single, simple action - opening GUI application
+        
+        Example 2: User says "Check if file exists" + Screenshot shows desktop
+        - Analysis: Need to check file system
+        - Subtask 1: Delegate to Programmer: "Check if file exists using run_command"
+        - Reason: Simple file operation that returns output
+
+        DECOMPOSITION GUIDELINES:
+        - If you see a desktop: First subtask should be opening the required application
+        - If you see a browser: First subtask should be navigating to the target website
+        - If you see a website: First subtask should be the most basic interaction (click, type, scroll)
+        - For terminal tasks: Group terminal operations into single subtasks (e.g., "Create terminal session and run ls command")
+        - For GUI applications: Use run_command_in_background (no parameters needed)
+        - Always break complex actions into individual steps (e.g., "search for laptops" becomes "click search box" + "type laptops" + "press enter")
+        - Each subtask should be completable in 5-10 seconds
+        - Avoid combining multiple actions in a single subtask
+        - IMPORTANT: For terminal tasks, include both session creation AND command execution in one subtask
+        
+        EVALUATION PROCESS:
+        After each sub-agent completes a task, you will receive both a text summary of their actions AND a screenshot showing the final screen state.
         Carefully evaluate both the summary text and the visual screenshot to determine:
         - Whether the sub-task was completed successfully
         - If you need to delegate again to the same agent to fix or continue the task
         - If you should switch to a different agent or approach
         - Whether the overall goal has been achieved
-
+        
         Use the 'task_completed' function when the user's overall goal has been achieved.
         """
 
@@ -318,22 +374,31 @@ class CoAct1:
 
     def _create_programmer(self) -> ComputerAgent:
         instructions = """
-        You are the Programmer agent. You solve tasks by writing and executing Python or Bash scripts using the 'run_command' tool.
-        When using `run_command` to start an application (like 'firefox' or 'code'), you MUST set `run_in_background=True` to prevent the system from hanging.
-        For all other commands, you can omit this parameter.
-        You can also use other file system tools to interact with the OS.
-        You will be given a subtask from the Orchestrator. Write the necessary code or commands to complete it.
-        You can use multiple rounds of coding to reflect on the execution output and refine your commands.
-        Once the subtask is complete, respond with a summary of what you did.
+        You are the Programmer agent. You solve tasks by writing and executing shell commands.
+
+        COMMAND EXECUTION TOOLS:
+
+        1. 'run_command' - Runs a shell command and waits for output:
+           - Use this for commands where you need to see the results (ls, cat, grep, etc.)
+           - Executes the command and returns stdout/stderr output
+           - Waits for the command to complete
+
+        2. 'run_command_in_background' - Runs a shell command in the background:
+           - Use this for opening applications (firefox, chrome, xterm, etc.)
+           - Commands start immediately without waiting for output
+           - Perfect for GUI applications that run indefinitely
+
+        DECISION GUIDELINES:
+        - Use 'run_command' for: file operations, checking status, getting output, any command where you need results
+        - Use 'run_command_in_background' for: opening browsers, editors, terminals, any GUI application
+
+        You will be given a subtask from the Orchestrator. Execute the appropriate commands to complete it.
         """
         
         # Gather all methods from the toolkit instance
         programmer_tool_methods = [
             self.programmer_tools.run_command,
-            self.programmer_tools.list_dir,
-            self.programmer_tools.read_file,
-            self.programmer_tools.write_file,
-            self.programmer_tools.venv_cmd,
+            self.programmer_tools.run_command_in_background,
         ]
 
         print(f"👨‍💻 [PROGRAMMER] Initializing with model: {self.programmer_model}")
@@ -372,8 +437,7 @@ class CoAct1:
         ELEMENT DESCRIPTION GUIDELINES:
         - Be specific and descriptive (e.g., "the blue login button with text 'Log In'" not just "button")
         - Include visual characteristics like color, text, position, or size
-        - Use consistent descriptions for the same element across multiple attempts
-        - If an element is not found, try a more general description
+        - Use consistent descriptions but different in wording for the same element across multiple attempts
 
         CRITICAL EFFICIENCY WORKFLOW:
         - MINIMIZE grounding model calls by preferring keyboard actions over mouse clicks
@@ -504,14 +568,14 @@ class CoAct1:
         ]
 
         orchestrator_history: List[Dict[str, Any]] = [{"role": "user", "content": initial_content}]
-
+    
         for i in range(10): # Max 10 steps
             print(f"\n--- Step {i+1} ---")
 
             # For subsequent steps, add a simple prompt (screenshots will come from sub-agent summaries)
             orchestrator_history.append({
                 "role": "user",
-                "content": "What is the next subtask based on the current progress?"
+                "content": "What is the next subtask based on the current progress? (or you can call task_completed)"
             })
 
             # 2. Call Orchestrator
@@ -524,7 +588,7 @@ class CoAct1:
                         break
                 if delegation:
                     break
-
+            
             if not delegation:
                 print("🛑 Orchestrator did not delegate a task. Ending.")
                 break
@@ -542,7 +606,7 @@ class CoAct1:
             if tool_name == "task_completed":
                 print("✅ Task completed!")
                 break
-
+            
             sub_agent = None
             if tool_name == "delegate_to_programmer":
                 print(f"👨‍💻 Delegating to Programmer: {subtask}")
@@ -702,7 +766,7 @@ async def main():
         )
 
         # Example Task
-        task = "go to amazon and click on the cheapest possible laptop"
+        task = "go to youtube and play the never gonna give you up video"
         
         await coact_system.run(task)
 
