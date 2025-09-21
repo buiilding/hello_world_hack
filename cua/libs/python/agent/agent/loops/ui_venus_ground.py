@@ -314,7 +314,7 @@ class UIVenusGroundConfig(AsyncAgentConfig):
 
             # Use the model's predict_click method
             print(f"🎯 [GROUNDING MODEL: {model}] Predicting click for: '{instruction}'")
-            print(f"   📏 Image size: {len(image_b64)} chars (base64)")
+            print("   🖼️  Image provided to grounding model")
 
             # Initialize model if not already done
             if self.model_instance is None:

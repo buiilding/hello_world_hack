@@ -775,7 +775,7 @@ class ComputerAgent:
                 print("   📸 Taking screenshot for click prediction...")
                 image_b64 = await self.computer_handler.screenshot()
 
-            print(f"   🖼️  Image size: {len(image_b64) if image_b64 else 0} chars")
+            print(f"   🖼️  Image provided to model")
 
             coordinates = await self.agent_loop.predict_click(
                 model=self.model,

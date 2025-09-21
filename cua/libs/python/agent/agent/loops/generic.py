@@ -262,6 +262,32 @@ class GenericConfig(AsyncAgentConfig):
                     "content": message["output"],
                     "tool_call_id": message.get("call_id", "call_1")
                 })
+            elif message.get("type") == "function_call_output":
+                # Handle function call output with multimodal content (text + images)
+                if isinstance(message.get("output"), list):
+                    # Convert multimodal content to liteLLM format
+                    content = []
+                    for item in message["output"]:
+                        if item.get("type") == "text":
+                            content.append({
+                                "type": "text",
+                                "text": item["text"]
+                            })
+                        elif item.get("type") == "image_url":
+                            content.append({
+                                "type": "image_url",
+                                "image_url": item["image_url"]
+                            })
+                    api_messages.append({
+                        "role": "user",  # Function results are shown as user messages
+                        "content": content
+                    })
+                else:
+                    # Handle simple string output
+                    api_messages.append({
+                        "role": "user",
+                        "content": str(message["output"])
+                    })
             elif message.get("role"):
                 # Handle liteLLM format messages that already have "role" instead of "type"
                 api_messages.append(message)

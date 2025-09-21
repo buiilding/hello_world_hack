@@ -113,23 +113,31 @@ def _prepare_tools_for_grounded(tool_schemas: List[Dict[str, Any]]) -> List[Dict
     return grounded_tools
 
 def get_last_image_b64(messages: List[Dict[str, Any]]) -> Optional[str]:
-    """Get the last image from a list of messages, checking both user messages and tool outputs."""
+    """Get the last image from a list of messages, checking user messages, tool outputs, and computer call outputs."""
     for message in reversed(messages):
-        # Check user messages with content lists
+        # Check user messages with content lists (including the new format from CoAct-1)
         if message.get("role") == "user" and isinstance(message.get("content"), list):
             for content_item in reversed(message["content"]):
                 if content_item.get("type") == "image_url":
                     image_url = content_item.get("image_url", {}).get("url", "")
                     if image_url.startswith("data:image/png;base64,"):
                         return image_url.split(",", 1)[1]
-        
-        # Check computer call outputs
+
+        # Check computer call outputs (for tool results with images)
         elif message.get("type") == "computer_call_output" and isinstance(message.get("output"), dict):
             output = message["output"]
             if output.get("type") == "input_image":
                 image_url = output.get("image_url", "")
                 if image_url.startswith("data:image/png;base64,"):
                     return image_url.split(",", 1)[1]
+
+        # Check function call outputs (for orchestrator results with multimodal content)
+        elif message.get("type") == "function_call_output" and isinstance(message.get("output"), list):
+            for content_item in reversed(message["output"]):
+                if content_item.get("type") == "image_url":
+                    image_url = content_item.get("image_url", {}).get("url", "")
+                    if image_url.startswith("data:image/png;base64,"):
+                        return image_url.split(",", 1)[1]
     return None
 
 def get_failed_coordinates(messages: List[Dict[str, Any]]) -> List[Tuple[int, int]]:
@@ -152,14 +160,15 @@ def get_failed_coordinates(messages: List[Dict[str, Any]]) -> List[Tuple[int, in
 class ComposedGroundedConfig(AsyncAgentConfig):
     """
     Composed-grounded agent configuration that uses both grounding and thinking models.
-    
+
     The model parameter should be in format: "grounding_model+thinking_model"
     e.g., "huggingface-local/HelloKKMe/GTA1-7B+gemini/gemini-1.5-pro"
     """
-    
+
     def __init__(self):
         self.desc2xy: Dict[str, Tuple[float, float]] = {}
         self.grounding_agents: Dict[str, Any] = {}
+        self.last_before_image: Optional[str] = None  # Store image before last action
     
     async def predict_step(
         self,
@@ -194,18 +203,22 @@ class ComposedGroundedConfig(AsyncAgentConfig):
             raise ValueError(f"Composed model must be in format 'grounding_model+thinking_model', got: {model}")
         grounding_model, thinking_model = model.split("+", 1)
         
-        # Step 0: Find the latest screenshot from the history
+        # Step 0: Find the latest screenshot from the history (checks user messages and computer_call_output)
         last_image_b64 = get_last_image_b64(messages)
-        
+
         # Step 0.1: If no screenshot exists, take one automatically
         if not last_image_b64 and computer_handler:
             print("📸 No screenshot found in history, taking automatic screenshot...")
             try:
                 last_image_b64 = await computer_handler.screenshot()
-                print(f"   ✅ Screenshot taken successfully ({len(last_image_b64)} chars)")
+                print("   ✅ Screenshot taken successfully")
             except Exception as e:
                 print(f"   ❌ Failed to take screenshot: {e}")
                 last_image_b64 = None
+
+        # Step 0.2: Store current image for potential use in next call
+        # This will become the "before" image if the agent takes an action
+        current_image_for_next_call = last_image_b64
         
         # Step 0.5: Get failed coordinates from previous attempts
         failed_coords = get_failed_coordinates(messages)
@@ -221,25 +234,55 @@ class ComposedGroundedConfig(AsyncAgentConfig):
             allow_images_in_tool_results=False
         )
         
-        # Step 2.1: If we have a screenshot and the last message is from user, add it to the message
-        if last_image_b64 and completion_messages:
+        # Step 2.1: Add or replace images in the last user message
+        # For decision making, show only the most relevant current images
+        if completion_messages:
             last_message = completion_messages[-1]
             if last_message.get("role") == "user":
                 # Convert text content to list format if it's a string
                 if isinstance(last_message.get("content"), str):
+                    last_message["content"] = [{"type": "text", "text": last_message["content"]}]
+
+                if isinstance(last_message.get("content"), list):
+                    # Remove any existing images from the last user message (to avoid accumulation)
                     last_message["content"] = [
-                        {"type": "text", "text": last_message["content"]},
-                        {
+                        item for item in last_message["content"]
+                        if item.get("type") != "image_url"
+                    ]
+
+                    # Determine if this is the first call or subsequent call by checking for tool results
+                    has_tool_results = any(msg.get("type") in ["function_call_output", "computer_call_output"] for msg in messages)
+
+                    if has_tool_results and self.last_before_image and last_image_b64:
+                        # Subsequent calls: Show before and after images for comparison
+                        last_message["content"].extend([
+                            {
+                                "type": "text",
+                                "text": "\n--- BEFORE ACTION (what screen looked like when previous action was decided) ---"
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{self.last_before_image}"}
+                            },
+                            {
+                                "type": "text",
+                                "text": "\n--- AFTER ACTION (actual result of the previous action) ---"
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{last_image_b64}"}
+                            }
+                        ])
+                    elif last_image_b64:
+                        # First call: Only show current screen state
+                        last_message["content"].append({
                             "type": "image_url",
                             "image_url": {"url": f"data:image/png;base64,{last_image_b64}"}
-                        }
-                    ]
-                elif isinstance(last_message.get("content"), list):
-                    # Add image to existing content list
-                    last_message["content"].append({
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{last_image_b64}"}
-                    })
+                        })
+
+                    # Store current image as before_image for next call (after action execution)
+                    if last_image_b64:
+                        self.last_before_image = current_image_for_next_call
         
         # Step 3: Call thinking model with litellm.acompletion
         api_kwargs = {

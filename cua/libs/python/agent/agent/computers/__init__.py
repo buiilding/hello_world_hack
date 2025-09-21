@@ -61,6 +61,8 @@ async def make_computer_handler(computer):
             'move': computer.interface.move_cursor,
             'type': computer.interface.type_text,
             'keypress': computer.interface.press_key,
+            'press_key': computer.interface.press_key,
+            'hotkey': computer.interface.hotkey,
             'scroll': computer.interface.scroll,
             'wait': lambda ms=1000: None,  # Proxy doesn't have wait, stub it
         })

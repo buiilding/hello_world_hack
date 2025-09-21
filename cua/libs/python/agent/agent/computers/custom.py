@@ -183,6 +183,24 @@ class CustomComputerHandler(AsyncComputerHandler):
         if 'keypress' in self.functions:
             await self._call_function(self.functions['keypress'], keys)
         # No-op if not implemented
+
+    async def press_key(self, key: str, delay: Optional[float] = None) -> None:
+        """Press a single key (alias for keypress with single key)."""
+        if 'press_key' in self.functions:
+            await self._call_function(self.functions['press_key'], key, delay)
+        elif 'keypress' in self.functions:
+            # Fallback to keypress method if press_key not available
+            await self._call_function(self.functions['keypress'], key)
+        # No-op if not implemented
+
+    async def hotkey(self, *keys: str, delay: Optional[float] = None) -> None:
+        """Press key combination (alias for keypress with multiple keys)."""
+        if 'hotkey' in self.functions:
+            await self._call_function(self.functions['hotkey'], *keys, delay=delay)
+        elif 'keypress' in self.functions:
+            # Fallback to keypress method if hotkey not available
+            await self._call_function(self.functions['keypress'], list(keys))
+        # No-op if not implemented
     
     async def drag(self, path: List[Dict[str, int]]) -> None:
         """Drag along specified path."""
