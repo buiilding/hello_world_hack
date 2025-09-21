@@ -79,6 +79,36 @@ The script will:
 - Initialize CoAct-1 agents (Orchestrator, Programmer, GUI Operator)
 - Execute the example task
 
+### 5) Web UI (Development - Experimental)
+🚧 **This feature is still in development and may be unstable**
+
+A web-based interface with real-time CLI output streaming is available for development and testing:
+
+#### Setup the Web UI:
+```bash
+# Navigate to the UI directory
+cd hackathon-ui
+
+# Install Node.js dependencies
+npm install
+
+# Start both backend and frontend servers
+npm run dev:full
+```
+
+#### Use the Web UI:
+1. **Go to `http://localhost:8006`** in your browser
+2. **Enter a task** in the input field (e.g., "Go to Amazon and find the cheapest laptop")
+3. **Watch the agent in action** - the CoAct-1 system will execute your task with **live CLI output streaming** directly in the browser!
+
+The web UI provides:
+- Real-time streaming of all agent activity and CLI output
+- Automatic browser opening when tasks are submitted
+- Live progress updates as agents coordinate and execute tasks
+- Full access to the same CoAct-1 multi-agent system
+
+**Note**: Make sure your `GOOGLE_API_KEY` is set and Docker is running before starting the web UI.
+
 ## Notes and Troubleshooting
 - Docker must be installed and running before you start the script.
   - Windows users: Ensure WSL 2 backend is enabled for Docker Desktop.
