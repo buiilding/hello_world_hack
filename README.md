@@ -2,6 +2,12 @@
 
 This repo contains a runnable example of the CoAct-1 multi-agent system (Orchestrator, Programmer, GUI Operator) that automates tasks on a virtual Linux desktop via Docker.
 
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/1d856693-f4bb-4ede-ae18-9b4930f058cb"
+         width="600" controls>
+  </video>
+</div>
+
 ## Prerequisites (all OSes)
 - Install Miniconda (or Anaconda)
 - Install Docker and ensure it is running
