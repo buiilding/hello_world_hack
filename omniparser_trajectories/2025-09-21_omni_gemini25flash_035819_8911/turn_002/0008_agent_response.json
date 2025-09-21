@@ -1,0 +1,108 @@
+{
+  "timestamp": "139777343107420080",
+  "model": "omniparser+gemini/gemini-2.5-flash",
+  "kwargs": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Take a screenshot and tell me what you see on the desktop"
+      },
+      {
+        "type": "message",
+        "id": "HLDPaOmZMdSK-sAPk8biqAo",
+        "status": "tool_calls",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "annotations": []
+          }
+        ]
+      },
+      {
+        "type": "computer_call",
+        "action": {
+          "type": "screenshot"
+        },
+        "id": "call_cfcbb3b4251248b0a81ec623ec3e",
+        "call_id": "call_cfcbb3b4251248b0a81ec623ec3e",
+        "status": "completed"
+      },
+      {
+        "type": "computer_call_output",
+        "call_id": "call_cfcbb3b4251248b0a81ec623ec3e",
+        "acknowledged_safety_checks": [],
+        "output": {
+          "type": "input_image",
+          "image_url": "[omitted]",
+          "action_description": "\u2705 Action executed: screenshot"
+        }
+      }
+    ],
+    "model": "omniparser+gemini/gemini-2.5-flash",
+    "tools": [
+      {
+        "type": "computer",
+        "computer": "<computer:Computer>",
+        "id2xy": {
+          "1": [
+            0.0673828125,
+            0.020833333333333336
+          ],
+          "2": [
+            0.068359375,
+            0.48567708333333337
+          ],
+          "3": [
+            0.068359375,
+            0.46223958333333337
+          ],
+          "4": [
+            0.0673828125,
+            0.30859375
+          ],
+          "5": [
+            0.0693359375,
+            0.15104166666666669
+          ],
+          "6": [
+            0.8627133369445801,
+            0.020483681311209995
+          ],
+          "7": [
+            0.013790303841233253,
+            0.021222361635106306
+          ]
+        }
+      }
+    ],
+    "stream": false,
+    "computer_handler": "<computer:cuaComputerHandler>",
+    "max_retries": 3,
+    "use_prompt_caching": false
+  },
+  "response": {
+    "output": [
+      {
+        "type": "message",
+        "id": "JbDPaO3OHbqMjMcP1Le7mAw",
+        "status": "stop",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "I see a clean desktop with a few icons. There's a \"Recycle Bin\" icon, a \"New Text Document\" icon, and a \"Google Chrome\" icon. The wallpaper is a blue abstract design.",
+            "annotations": []
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 466,
+      "output_tokens": 45,
+      "total_tokens": 511,
+      "response_cost": 0.0002523
+    }
+  },
+  "created_at": "139777343107420710"
+}

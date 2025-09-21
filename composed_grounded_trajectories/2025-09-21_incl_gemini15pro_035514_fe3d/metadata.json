@@ -1,0 +1,12 @@
+{
+  "trajectory_id": "2025-09-21_incl_gemini15pro_035514_fe3d",
+  "created_at": "139777341141534080",
+  "status": "running",
+  "kwargs": {
+    "messages": "Click on the Firefox browser icon on the desktop",
+    "stream": true,
+    "model": "inclusionAI/UI-Venus-Ground-7B+gemini/gemini-1.5-pro",
+    "agent_loop": "ComposedGroundedConfig",
+    "quantization_bits": 8
+  }
+}

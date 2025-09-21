@@ -1,0 +1,56 @@
+{
+  "timestamp": "139777342585235950",
+  "model": "omniparser+gemini/gemini-2.0-flash-exp",
+  "kwargs": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Take a screenshot and describe what you see on the desktop"
+      }
+    ],
+    "model": "omniparser+gemini/gemini-2.0-flash-exp",
+    "tools": [
+      {
+        "type": "computer",
+        "computer": "<computer:Computer>",
+        "id2xy": {}
+      }
+    ],
+    "stream": false,
+    "computer_handler": "<computer:cuaComputerHandler>",
+    "max_retries": 3,
+    "use_prompt_caching": false
+  },
+  "response": {
+    "output": [
+      {
+        "type": "message",
+        "id": "8a_PaNOYD7qMjMcP1Le7mAw",
+        "status": "tool_calls",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "annotations": []
+          }
+        ]
+      },
+      {
+        "type": "computer_call",
+        "action": {
+          "type": "screenshot"
+        },
+        "id": "call_21825a719b154d33b6ee3de8f04e",
+        "call_id": "call_21825a719b154d33b6ee3de8f04e",
+        "status": "completed"
+      }
+    ],
+    "usage": {
+      "input_tokens": 283,
+      "output_tokens": 3,
+      "total_tokens": 286,
+      "response_cost": 0.0
+    }
+  },
+  "created_at": "139777342585236300"
+}

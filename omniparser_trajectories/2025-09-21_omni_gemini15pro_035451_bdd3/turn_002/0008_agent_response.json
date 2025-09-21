@@ -1,0 +1,108 @@
+{
+  "timestamp": "139777341028700090",
+  "model": "omniparser+gemini/gemini-1.5-pro",
+  "kwargs": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Take a screenshot and tell me what you see on the desktop"
+      },
+      {
+        "type": "message",
+        "id": "S6_PaPPWEqyi_uMPovyAwQE",
+        "status": "tool_calls",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "annotations": []
+          }
+        ]
+      },
+      {
+        "type": "computer_call",
+        "action": {
+          "type": "screenshot"
+        },
+        "id": "call_ac000305cbcf45048c12628290ea",
+        "call_id": "call_ac000305cbcf45048c12628290ea",
+        "status": "completed"
+      },
+      {
+        "type": "computer_call_output",
+        "call_id": "call_ac000305cbcf45048c12628290ea",
+        "acknowledged_safety_checks": [],
+        "output": {
+          "type": "input_image",
+          "image_url": "[omitted]",
+          "action_description": "\u2705 Action executed: screenshot"
+        }
+      }
+    ],
+    "model": "omniparser+gemini/gemini-1.5-pro",
+    "tools": [
+      {
+        "type": "computer",
+        "computer": "<computer:Computer>",
+        "id2xy": {
+          "1": [
+            0.0673828125,
+            0.020833333333333336
+          ],
+          "2": [
+            0.068359375,
+            0.48567708333333337
+          ],
+          "3": [
+            0.068359375,
+            0.46223958333333337
+          ],
+          "4": [
+            0.0673828125,
+            0.30859375
+          ],
+          "5": [
+            0.0693359375,
+            0.15104166666666669
+          ],
+          "6": [
+            0.8627133369445801,
+            0.020483681311209995
+          ],
+          "7": [
+            0.013790303841233253,
+            0.021222361635106306
+          ]
+        }
+      }
+    ],
+    "stream": false,
+    "computer_handler": "<computer:cuaComputerHandler>",
+    "max_retries": 3,
+    "use_prompt_caching": false
+  },
+  "response": {
+    "output": [
+      {
+        "type": "message",
+        "id": "VK_PaLLjHKbP_uMP5cyW6AQ",
+        "status": "stop",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "I have taken a screenshot. It appears to be blank.  Is there something specific you are looking for?\n",
+            "annotations": []
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 289,
+      "output_tokens": 23,
+      "total_tokens": 312,
+      "response_cost": 0.001253
+    }
+  },
+  "created_at": "139777341028700600"
+}
