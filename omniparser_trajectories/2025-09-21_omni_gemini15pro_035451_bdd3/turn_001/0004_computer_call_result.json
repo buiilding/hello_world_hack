@@ -1,0 +1,24 @@
+{
+  "item": {
+    "type": "computer_call",
+    "action": {
+      "type": "screenshot"
+    },
+    "id": "call_ac000305cbcf45048c12628290ea",
+    "call_id": "call_ac000305cbcf45048c12628290ea",
+    "status": "completed"
+  },
+  "result": [
+    {
+      "type": "computer_call_output",
+      "call_id": "call_ac000305cbcf45048c12628290ea",
+      "acknowledged_safety_checks": [],
+      "output": {
+        "type": "input_image",
+        "image_url": "[omitted]",
+        "action_description": "\u2705 Action executed: screenshot"
+      }
+    }
+  ],
+  "created_at": "139777340973297730"
+}

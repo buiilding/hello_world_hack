@@ -1,0 +1,24 @@
+{
+  "item": {
+    "type": "computer_call",
+    "action": {
+      "type": "screenshot"
+    },
+    "id": "call_1c7e7407aedd4cd389bb2ca4551a",
+    "call_id": "call_1c7e7407aedd4cd389bb2ca4551a",
+    "status": "completed"
+  },
+  "result": [
+    {
+      "type": "computer_call_output",
+      "call_id": "call_1c7e7407aedd4cd389bb2ca4551a",
+      "acknowledged_safety_checks": [],
+      "output": {
+        "type": "input_image",
+        "image_url": "[omitted]",
+        "action_description": "\u2705 Action executed: screenshot"
+      }
+    }
+  ],
+  "created_at": "139777340516144850"
+}
