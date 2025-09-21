@@ -19,6 +19,7 @@ import json
 import subprocess
 import tempfile
 import base64
+import argparse
 from typing import List, Dict, Any, Optional
 
 # Add local CUA directory to Python path (for development)
@@ -738,6 +739,12 @@ async def main():
     print("🚀 Starting CoAct-1 Example")
     print("=" * 60)
 
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Run CoAct-1 Multi-Agent System')
+    parser.add_argument('-m', '--message', type=str, required=True,
+                       help='The user message/task to execute')
+    args = parser.parse_args()
+
     if not os.getenv("GOOGLE_API_KEY"):
         print("❌ Error: GOOGLE_API_KEY environment variable not set.")
         return
@@ -765,9 +772,10 @@ async def main():
             gui_operator_model=gui_operator_model_name,
         )
 
-        # Example Task
-        task = "go to youtube and play the never gonna give you up video"
-        
+        # Use the task from command line arguments
+        task = args.message
+        print(f"🎯 Task: {task}")
+
         await coact_system.run(task)
 
     except Exception as e:
