@@ -4,7 +4,7 @@ This repo contains a runnable example of the CoAct-1 multi-agent system (Orchest
 
 <div align="center">
   <video src="https://github.com/user-attachments/assets/1d856693-f4bb-4ede-ae18-9b4930f058cb"
-         width="600" controls>
+         width="400" controls>
   </video>
 </div>
 
