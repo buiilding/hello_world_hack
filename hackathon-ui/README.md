@@ -19,6 +19,14 @@ A React-based UI for the CoAct-1 Multi-Agent Computer Automation System.
 
    This will start both the backend API server (port 3001) and the frontend React app (port 8006).
 
+## Running the Example
+
+1. **Open your browser** to `http://localhost:8006`
+2. **Enter a task** in the input field (e.g., "Go to Amazon and find the cheapest laptop")
+3. **Watch the agent in action** - the CoAct-1 multi-agent system will execute your task with real-time CLI output streaming directly in the browser!
+
+The system will automatically open the browser when you submit a task, showing you the live execution of the CoAct-1 agents as they coordinate to complete your request.
+
 ## Alternative: Run separately
 
 **Backend API (for CoAct-1 execution):**
