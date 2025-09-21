@@ -49,6 +49,26 @@ setx GOOGLE_API_KEY "YOUR_KEY_HERE"
 # Then open a new terminal so the change takes effect
 ```
 
+- Windows (CMD):
+```bat
+setx GOOGLE_API_KEY "YOUR_KEY_HERE"
+rem Close this window and open a new terminal so the change takes effect
+```
+
+Verify that the variable is set before running the script:
+- macOS/Linux (bash/zsh):
+```bash
+echo $GOOGLE_API_KEY | sed 's/.\{6\}$/******/'
+```
+- Windows (PowerShell):
+```powershell
+echo $Env:GOOGLE_API_KEY.Substring(0, [Math]::Min(6, $Env:GOOGLE_API_KEY.Length)) + "******"
+```
+- Windows (CMD):
+```bat
+echo %GOOGLE_API_KEY%
+```
+
 ### 4) Run the example
 From the repo root (this directory):
 ```bash
