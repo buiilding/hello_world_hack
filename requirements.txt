@@ -1,0 +1,12 @@
+cua-computer[all]
+cua-agent[all]
+transformers
+qwen-vl-utils
+Pillow
+torch
+numpydoc
+opencv-python
+opencv-python-headless
+ctransformers
+einops
+timm
